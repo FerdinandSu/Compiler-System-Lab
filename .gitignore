@@ -5,3 +5,5 @@ syntax.tab.h
 lex.yy.c
 syntax.output
 *.o
+
+*.pdf

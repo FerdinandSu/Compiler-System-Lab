@@ -96,16 +96,6 @@ int max_line_num = 0;
     /* { } */
 %left LC RC
 
-
-
-
-
-
-
-
-
-
-
 /*%type <intv> IntExpr
 %type ElseExpr
 %type <fltv> FloatExpr*/

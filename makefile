@@ -24,18 +24,18 @@ head: clean syntax.tab.h
 test: testreq testopt
 
 testreq: all
-	echo "\n\033[34m<1.c>\033[0m\n" && ./parser ./examples/1.c \
-	&& echo "\n\033[34m<2.c>\033[0m\n" && ./parser ./examples/2.c \
-	&& echo "\n\033[34m<3.c>\033[0m\n" && ./parser ./examples/3.c \
-	&& echo "\n\033[34m<4.c>\033[0m\n" && ./parser ./examples/4.c \
-	&& echo "\n\033[34m<5.c>\033[0m\n" && ./parser ./examples/5.c
+	echo "\n\033[34m<1.c>\033[0m\n" && ./parser ./examples-lab1/1.c \
+	&& echo "\n\033[34m<2.c>\033[0m\n" && ./parser ./examples-lab1/2.c \
+	&& echo "\n\033[34m<3.c>\033[0m\n" && ./parser ./examples-lab1/3.c \
+	&& echo "\n\033[34m<4.c>\033[0m\n" && ./parser ./examples-lab1/4.c \
+	&& echo "\n\033[34m<5.c>\033[0m\n" && ./parser ./examples-lab1/5.c
 
 testopt: all
-	echo "\n\033[34m<6.c>\033[0m\n" && ./parser ./examples/6.c \
-	&& echo "\n\033[34m<7.c>\033[0m\n" && ./parser ./examples/7.c \
-	&& echo "\n\033[34m<8.c>\033[0m\n" && ./parser ./examples/8.c \
-	&& echo "\n\033[34m<9.c>\033[0m\n" && ./parser ./examples/9.c \
-	&& echo "\n\033[34m<10.c>\033[0m\n" && ./parser ./examples/10.c
+	echo "\n\033[34m<6.c>\033[0m\n" && ./parser ./examples-lab1/6.c \
+	&& echo "\n\033[34m<7.c>\033[0m\n" && ./parser ./examples-lab1/7.c \
+	&& echo "\n\033[34m<8.c>\033[0m\n" && ./parser ./examples-lab1/8.c \
+	&& echo "\n\033[34m<9.c>\033[0m\n" && ./parser ./examples-lab1/9.c \
+	&& echo "\n\033[34m<10.c>\033[0m\n" && ./parser ./examples-lab1/10.c
 clean:
 	-@ rm parser syntax.tab.c syntax.tab.h lex.yy.c syntax.output *.o
 
