@@ -25,6 +25,7 @@ struct Node
     int children_count;
     struct Node** children;
     int line_num;
+
 };
 
 struct Node empty_node_origin={

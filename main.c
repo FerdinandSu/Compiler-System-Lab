@@ -86,10 +86,20 @@ void lex_err(int ln,char* desc)
     err_count++;
     printf(RED"\033[31mError type A at Line %d: %s.\n"CLEAN,ln,desc);
 }
-void lex_err_x(int ln,char* expr,char* desc)
+void lex_err_x(int ln, char* expr,char* desc)
 {
     err_count++;
     printf(RED"Error type A at Line %d: %s \"%s\".\n"CLEAN,ln,desc,expr);
+}
+void trans_err(int type, int ln, char* desc)
+{
+    err_count++;
+    printf(RED"\033[31mError type %d at Line %d: %s.\n"CLEAN,type,ln,desc);
+}
+void trans_err_x(int type, int ln, char* expr, char* desc)
+{
+    err_count++;
+    printf(RED"Error type %d at Line %d: %s \"%s\".\n"CLEAN,type,ln,desc,expr);
 }
 void yyerror(const char* s)
 {
