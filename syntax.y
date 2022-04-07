@@ -44,8 +44,9 @@ struct Node* create_node(char* type,union NodeValue value, int children_count,st
 union NodeValue uv_int(int value);
 union NodeValue uv_flt(float value);
 union NodeValue uv_str(char* value);
-
+int yylex();
 int max_line_num = 0;
+char* error_expression;
 %}
 
 %locations
@@ -95,6 +96,16 @@ int max_line_num = 0;
 %left LP RP LB RB DOT
     /* { } */
 %left LC RC
+
+
+
+
+
+
+
+
+
+
 
 /*%type <intv> IntExpr
 %type ElseExpr

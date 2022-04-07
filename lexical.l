@@ -16,6 +16,9 @@ int yycolumn = 1;
     yylloc.first_column = yycolumn; \
     yylloc.last_column = yycolumn + yyleng - 1; \
     yycolumn += yyleng;
+int eof_error = 0;
+int length = 0;
+int last_line = 0;
 %}
 
 %x COMMENT
@@ -30,52 +33,52 @@ id [_a-zA-Z][_0-9a-zA-Z]{0,31}
 
 %%
 
-<INITIAL>"int"	{ lex_log(yylineno,"int"); return INT; }
-<INITIAL>"float"	{ lex_log(yylineno,"float"); return FLOAT; }
+<INITIAL>"int"	{ length += yyleng; lex_log(yylineno,"int"); return INT; }
+<INITIAL>"float"	{ length += yyleng; lex_log(yylineno,"float"); return FLOAT; }
 
-<INITIAL>"while"	{ lex_log(yylineno,"while"); return WHILE; }
-<INITIAL>"if"	{ lex_log(yylineno,"if"); return IF; }
-<INITIAL>"else"	{ lex_log(yylineno,"else"); return ELSE; }
-<INITIAL>"return"	{ lex_log(yylineno,"return"); return RETURN; }
-<INITIAL>"struct"	{ lex_log(yylineno,"struct"); return STRUCT; }
-<INITIAL>">="	{ lex_log(yylineno,">="); return GE; }
-<INITIAL>"<="	{ lex_log(yylineno,"<="); return LE; }
-<INITIAL>"=="	{ lex_log(yylineno,"=="); return EQ; }
-<INITIAL>"!="	{ lex_log(yylineno,"!="); return NEQ; }
-<INITIAL>"||"	{ lex_log(yylineno,"||"); return OR; }
-<INITIAL>"&&"	{ lex_log(yylineno,"&&"); return AND; }
-<INITIAL>"("	{ lex_log(yylineno,"("); return LP; }
-<INITIAL>")"	{ lex_log(yylineno,")"); return RP; }
-<INITIAL>"["	{ lex_log(yylineno,"[");return LB; }
-<INITIAL>"]"	{ lex_log(yylineno,"]");return RB; }
-<INITIAL>"."	{ lex_log(yylineno,"."); return DOT; }
-<INITIAL>"*"	{ lex_log(yylineno,"*"); return MUL; }
-<INITIAL>"+"	{ lex_log(yylineno,"+"); return ADD; }
-<INITIAL>"-"	{ lex_log(yylineno,"-"); return SUB; }
-<INITIAL>"!"	{ lex_log(yylineno,"!"); return NOT; }
-<INITIAL>"/"	{ lex_log(yylineno,"/"); return DIV; }
-<INITIAL>">"	{ lex_log(yylineno,">"); return GT; }
-<INITIAL>"<"	{ lex_log(yylineno,"<"); return LT; }
-<INITIAL>"="	{ lex_log(yylineno,"="); return ASSIGNOP; }
-<INITIAL>","	{ lex_log(yylineno,","); return COMMA; }
-<INITIAL>"{"	{ lex_log(yylineno,"{"); return LC; }
-<INITIAL>"}"	{ lex_log(yylineno,"}"); return RC; }
-<INITIAL>";"	{ lex_log(yylineno,";"); return SEM; }
+<INITIAL>"while"	{ length += yyleng; lex_log(yylineno,"while"); return WHILE; }
+<INITIAL>"if"	{ length += yyleng; lex_log(yylineno,"if"); return IF; }
+<INITIAL>"else"	{ length += yyleng; lex_log(yylineno,"else"); return ELSE; }
+<INITIAL>"return"	{ length += yyleng; lex_log(yylineno,"return"); return RETURN; }
+<INITIAL>"struct"	{ length += yyleng; lex_log(yylineno,"struct"); return STRUCT; }
+<INITIAL>">="	{ length += yyleng; lex_log(yylineno,">="); return GE; }
+<INITIAL>"<="	{ length += yyleng; lex_log(yylineno,"<="); return LE; }
+<INITIAL>"=="	{ length += yyleng; lex_log(yylineno,"=="); return EQ; }
+<INITIAL>"!="	{ length += yyleng; lex_log(yylineno,"!="); return NEQ; }
+<INITIAL>"||"	{ length += yyleng; lex_log(yylineno,"||"); return OR; }
+<INITIAL>"&&"	{ length += yyleng; lex_log(yylineno,"&&"); return AND; }
+<INITIAL>"("	{ length += yyleng; lex_log(yylineno,"("); return LP; }
+<INITIAL>")"	{ length += yyleng; lex_log(yylineno,")"); return RP; }
+<INITIAL>"["	{ length += yyleng; lex_log(yylineno,"[");return LB; }
+<INITIAL>"]"	{ length += yyleng; lex_log(yylineno,"]");return RB; }
+<INITIAL>"."	{ length += yyleng; lex_log(yylineno,"."); return DOT; }
+<INITIAL>"*"	{ length += yyleng; lex_log(yylineno,"*"); return MUL; }
+<INITIAL>"+"	{ length += yyleng; lex_log(yylineno,"+"); return ADD; }
+<INITIAL>"-"	{ length += yyleng; lex_log(yylineno,"-"); return SUB; }
+<INITIAL>"!"	{ length += yyleng; lex_log(yylineno,"!"); return NOT; }
+<INITIAL>"/"	{ length += yyleng; lex_log(yylineno,"/"); return DIV; }
+<INITIAL>">"	{ length += yyleng; lex_log(yylineno,">"); return GT; }
+<INITIAL>"<"	{ length += yyleng; lex_log(yylineno,"<"); return LT; }
+<INITIAL>"="	{ length += yyleng; lex_log(yylineno,"="); return ASSIGNOP; }
+<INITIAL>","	{ length += yyleng; lex_log(yylineno,","); return COMMA; }
+<INITIAL>"{"	{ length += yyleng; lex_log(yylineno,"{"); return LC; }
+<INITIAL>"}"	{ length += yyleng; lex_log(yylineno,"}"); return RC; }
+<INITIAL>";"	{ length += yyleng; lex_log(yylineno,";"); return SEM; }
 
-<INITIAL>{binary}	{ yylval.intv = strtol(yytext + 2, (char**)NULL, 2);  lex_log_x(yylineno,"int_const",yytext); return CONST_INT; }
-<INITIAL>{hex}|{octal}|{decimal}			{ yylval.intv = strtol(yytext, (char**)NULL, 0); lex_log_x(yylineno,"int_const",yytext); return CONST_INT; }
-<INITIAL>{realnum}	{ yylval.fltv = atof(yytext);lex_log_x(yylineno,"float_const",yytext); return CONST_FLOAT;}
-<INITIAL>{id}	{ lex_log_x(yylineno,"id",yytext); yylval.strv = strdup(yytext); return ID; }
-<INITIAL>\n	{ yycolumn = 1; }
-<INITIAL>[\r\t ]+	{ }
+<INITIAL>{binary}	{ yylval.intv = strtol(yytext + 2, (char**)NULL, 2);  lex_log_x(yylineno,"int_const",yytext); length += yyleng; return CONST_INT; }
+<INITIAL>{hex}|{octal}|{decimal}			{ yylval.intv = strtol(yytext, (char**)NULL, 0); lex_log_x(yylineno,"int_const",yytext); length += yyleng; return CONST_INT; }
+<INITIAL>{realnum}	{ yylval.fltv = atof(yytext);lex_log_x(yylineno,"float_const",yytext); length += yyleng; return CONST_FLOAT;}
+<INITIAL>{id}	{ length += yyleng;lex_log_x(yylineno,"id",yytext); yylval.strv = strdup(yytext); return ID; }
+<INITIAL>\n	{ yycolumn = 1; length += yyleng; }
+<INITIAL>[\r\t ]+	{ length += yyleng; }
     /* 单行注释 */
-<INITIAL>\/\/.*\n	{ }
+<INITIAL>\/\/.*\n	{ length += yyleng; }
     /* 多行注释 */
-<INITIAL>"/*"	{BEGIN COMMENT;}
-<COMMENT>"*/"	{BEGIN INITIAL;}
+<INITIAL>"/*"	{length += yyleng; last_line = yylineno;BEGIN COMMENT;}
+<COMMENT>"*/"	{length += yyleng;BEGIN INITIAL;}
 <COMMENT>.|\n|\r	{ yymore(); }
-<COMMENT><<EOF>>	{ lex_err( yylineno,"Illegal Character:\\0"); BEGIN INITIAL; return 0;}
-<INITIAL>[0-9a-zA-Z_]+|[^\n\r\t ]	{ lex_err_x(yylineno,yytext,"Invalid Token");}
+<COMMENT><<EOF>>	{ eof_error = 1; lex_err( yylineno,"Illegal Character:\\0"); BEGIN INITIAL; return 0;}
+<INITIAL>[0-9a-zA-Z_]+|[^\n\r\t ]	{ length += yyleng; lex_err_x(yylineno,yytext,"Invalid Token");}
 
 %%
 

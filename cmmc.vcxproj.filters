@@ -1,0 +1,49 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="lib">
+      <UniqueIdentifier>{e6c4e84a-53b4-4aa8-b40e-a7d9c451d63f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lib\hashtable">
+      <UniqueIdentifier>{3efbfd71-1748-4b29-9f1d-897f9a782ef9}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="lib\hashtable\hashfunc.h">
+      <Filter>lib\hashtable</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\hashtable\hashtable.h">
+      <Filter>lib\hashtable</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\hashtable\murmur.h">
+      <Filter>lib\hashtable</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\hashtable\test.h">
+      <Filter>lib\hashtable</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\hashtable\timer.h">
+      <Filter>lib\hashtable</Filter>
+    </ClInclude>
+    <ClInclude Include="dependency_graph.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="symbols.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="syntax.tab.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="lib\hashtable\hashtable.c">
+      <Filter>lib\hashtable</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\hashtable\main.c">
+      <Filter>lib\hashtable</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\hashtable\murmur.c">
+      <Filter>lib\hashtable</Filter>
+    </ClCompile>
+    <ClCompile Include="lex.yy.c" />
+    <ClCompile Include="main.c" />
+    <ClCompile Include="syntax.tab.c" />
+  </ItemGroup>
+</Project>

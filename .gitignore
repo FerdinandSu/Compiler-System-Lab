@@ -5,5 +5,7 @@ syntax.tab.h
 lex.yy.c
 syntax.output
 *.o
-
-*.pdf
+old.*
+obj/
+bin/
+.vs/
