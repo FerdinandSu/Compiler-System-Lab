@@ -6,14 +6,8 @@ symbol_table new_symbol_table()
 	ht_init(table, HT_KEY_CONST | HT_VALUE_CONST, 0.05);
 	return table;
 }
-symbol_type new_symbol_type(
-	symbol_schema schema, symbol_type_def type_def)
-{
-	symbol_type r = calloc(sizeof(struct symbol_type_t), 1);
-	r->schema = schema;
-	r->def = type_def;
-}
-symbol new_symbol(symbol_type type, string name, int readonly, int implemented)
+
+symbol new_symbol(class type, string name, int readonly, int implemented)
 {
 	symbol r = malloc(sizeof(struct symbol_t));
 	r->flags.implemented = implemented;
@@ -22,49 +16,24 @@ symbol new_symbol(symbol_type type, string name, int readonly, int implemented)
 	r->type = type;
 	return r;
 }
+symbol get_symbol(symbol_table slist, string name)
+{
+    size_t v_size;
+    return ht_get(slist, name, strlen(name) + 1, &v_size);
+}
+int has_symbol(symbol_table slist, string name)
+{
+    return ht_contains(slist, name, strlen(name) + 1);
+}
+void add_symbol(symbol_table slist, symbol sym)
+{
+    size_t v_size;
+    return ht_insert(slist, sym->name, strlen(sym->name) + 1,
+                     sym, sizeof(struct symbol_t));
+}
 void destroy_symbol_table(symbol_table table)
 {
 	ht_destroy(table);
-}
-symbol_type typecpy(symbol_type origin)
-{
-	symbol_type r = malloc(sizeof(struct symbol_type_t));
-	r->def = origin->def,
-	r->schema = origin->schema;
-	return r;
-}
-
-symbol_type type_int()
-{
-
-	struct symbol_type_t type_int_def = {
-		.schema = SYMBOL_SCHEMA_STANDARD,
-		.def = {.type = TYPE_INT}};
-	return typecpy(&type_int_def);
-}
-
-symbol_type type_float()
-{
-	struct symbol_type_t type_float_def = {
-		.schema = SYMBOL_SCHEMA_STANDARD,
-		.def = {.type = TYPE_FLOAT}};
-	return typecpy(&type_float_def);
-}
-
-int typeeql(symbol_type t1, symbol_type t2)
-{
-	if (t1 == NULL || t2 == NULL)
-		return 0;
-	switch (t2->schema)
-	{
-	case SYMBOL_SCHEMA_STANDARD:
-		return t1->schema != t2->schema &&
-			   t1->def.type == t2->def.type;
-	case SYMBOL_SCHEMA_FUNCTION:
-		return typeeql(t1, t2->def.func_def.type);
-	default:
-		return 0;
-	}
 }
 
 symbol_table_enumerator create_symbol_table_enumerator(symbol_table t)
