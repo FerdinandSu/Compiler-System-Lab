@@ -1,10 +1,11 @@
 #include "symbols.h"
-#include"lib/hashtable/hashtable.h"
+#include "../lib/hashtable/hashtable.h"
+#include "../lib/hashtable/murmur.h"
 
 symbol_table new_symbol_table()
 {
 	symbol_table table = malloc(sizeof(hash_table));
-	ht_init(table, HT_KEY_CONST | HT_VALUE_CONST, 0.05);
+	ht_init(table, HT_KEY_CONST | HT_VALUE_CONST, 0.05, MurmurHash3_x86_32, MurmurHash3_x86_128, MurmurHash3_x64_128);
 	return table;
 }
 
@@ -28,7 +29,6 @@ int has_symbol(symbol_table slist, string name)
 }
 void add_symbol(symbol_table slist, symbol sym)
 {
-	size_t v_size;
 	return ht_insert(slist, sym->name, strlen(sym->name) + 1,
 					 sym, sizeof(struct symbol_t));
 }
@@ -55,7 +55,7 @@ int has_next_symbol_table_enumerator(symbol_table_enumerator e)
 }
 symbol get_current_symbol_table_enumerator(symbol_table_enumerator e)
 {
-	string key = e->keys[0];
+	string key = e->keys[e->current_count];
 	size_t desp;
 	return ht_get(e->table, key, strlen(key) + 1, &desp);
 }
@@ -70,8 +70,8 @@ symbol_table new_symbol_table_from_list(list l)
 	symbol_table st = new_symbol_table();
 	for (; has_next_enumerator(e); move_next_enumerator(e))
 	{
-		symbol sym=get_current_enumerator(e);
-		add_symbol(st,sym);
+		symbol sym = get_current_enumerator(e);
+		add_symbol(st, sym);
 	}
 	destroy_enumerator(e);
 	return st;

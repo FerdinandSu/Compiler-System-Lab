@@ -8,11 +8,32 @@
 #define YYDEBUG 0
 #define LEXDEBUG 0
 
-
+char* trans_errors[] = {
+    "Unknown Expression",
+    "Undefined variable",
+    "Undefined function",
+    "Redefined variable",
+    "Redefined function",
+    "Type mismatched for assignment",
+    "The left-hand side of an assignment must be a variable",
+    "Type mismatched for operands",
+    "Type mismatched for return",
+    "Arguments are not matched with parameters",
+    "Not an array",
+    "Not a function",
+    "Array index is not an integer",
+    "Illegal use of \".\"",
+    "Undefined field",
+    "Redefined field",
+    "Duplicated name",
+    "Undefined structure",
+    "Function not implemented",
+    "Conflicted function declaration",
+    "Condition expression is not an integer"};
 
 extern int max_line_num;
 extern int yylineno;
-//nodeptr root;
+nodeptr root;
 int err_count=0;
 
 int main(int argc, char** argv)
@@ -28,6 +49,7 @@ int main(int argc, char** argv)
     //cprintf(0,root);
     translate_system_init();
     Program(root);
+    global_symbol_check();
     if(err_count==0){
         printf(GREEN"Translation Completed Successfully.\n"CLEAN);
     }
@@ -94,7 +116,7 @@ void lex_err_x(int ln, char* expr,char* desc)
 void trans_err(int type, int ln)
 {
     err_count++;
-    printf(RED"\033[31mError type %d at Line %d: %s.\n"CLEAN,type,ln,trans_errors[type]);
+    printf(RED"Error type %d at Line %d: %s.\n"CLEAN,type,ln,trans_errors[type]);
 }
 void trans_err_x(int type, int ln, char* expr)
 {

@@ -30,7 +30,7 @@ object pop_stack(stack stk)
     object top = peek_stack(stk);
     if (!is_empty_stack(stk))
     {
-        stk->top = stk->top->element;
+        stk->top = stk->top->next;
     }
     return top;
 }

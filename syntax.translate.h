@@ -1,21 +1,21 @@
 #pragma once
 
-#include "mylib.h"
+#include "utils/mylib.h"
 
-// typedef struct node_t
-// {
-//     char *type;
-//     union
-//     {
-//         int intv;
-//         double fltv;
-//         char *strv;
-//     } value;
-//     int children_count;
-//     struct node_t **children;
-//     int line_num;
-// } synnode;
-typedef struct Node *nodeptr;
+typedef struct node_t
+{
+    char *type;
+    union
+    {
+        int intv;
+        double fltv;
+        char *strv;
+    } value;
+    int children_count;
+    struct node_t **children;
+    int line_num;
+} synnode;
+typedef synnode *nodeptr;
 
 symbol_table global_symbols;
 /**
@@ -101,4 +101,5 @@ int func_param_eql(list parameters, list arguments);
  * 数组访问子式：expression + expression
  */
 expression parse_exp_quadruple(nodeptr node);
+void global_symbol_check();
 expression Exp(nodeptr node);

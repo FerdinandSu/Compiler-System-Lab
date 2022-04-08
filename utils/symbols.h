@@ -1,7 +1,7 @@
 #pragma once
 
 #define __WITH_MURMUR
-#include "lib/hashtable/hashtable.h"
+#include "../lib/hashtable/hashtable.h"
 #include "list.h"
 #include "corelib.h"
 #include "statements.h"
@@ -33,7 +33,7 @@ typedef struct symbol_table_enumerator_t
 {
 	void **keys;
 	symbol_table table;
-	size_t entry_count;
+	unsigned int entry_count;
 	size_t current_count;
 } * symbol_table_enumerator;
 symbol_table_enumerator create_symbol_table_enumerator(symbol_table t);

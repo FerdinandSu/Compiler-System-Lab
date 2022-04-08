@@ -1,7 +1,7 @@
 #pragma once
 #include<memory.h>
-#include "syntax.tab.h"
-#include "lib/hashtable/hashtable.h"
+#include "../syntax.tab.h"
+#include "../lib/hashtable/hashtable.h"
 
 #define RED "\033[31m"
 #define GREEN "\033[32m"
@@ -21,6 +21,8 @@ typedef struct control_flags_t
 } control_flags;
 typedef void *object;
 typedef hash_table *symbol_table;
+
+//typedef list symbol_table;
 
 typedef char* string;
 
@@ -51,8 +53,8 @@ typedef struct function_def_t
 	 * @brief list<symbol>
 	 * 
 	 */
-	struct list_t* params
-}function_def;
+	struct list_t* params;
+} function_def;
 typedef union class_def_t
 {
 	basic_type type;
@@ -69,7 +71,8 @@ typedef struct class_t
 	class_schema schema;
 	class_def def;
 } * class;
-class new_class();
+class new_class(
+	class_schema schema, class_def type_def);
 
 class class_int();
 

@@ -4,7 +4,6 @@
 #include <string.h>
 #include <memory.h>
 #include "lex.yy.c"
-#pragma once
 
 extern int yylex();
 extern int yyparse();
@@ -660,8 +659,21 @@ Exp: Exp ASSIGNOP Exp	{
 	}
     ;
 
-Args: Exp COMMA Args
-    | Exp
+Args: Exp COMMA Args	{
+		struct Node* nodes[]={
+			$1,
+			new_fnode("COMMA",@2.first_line),
+			$3
+			};
+		$$=new_node("Args",@$.first_line,3,nodes);
+		max_line_num=@$.first_line;
+	}
+    | Exp	{
+		struct Node* nodes[]={
+			$1
+			};
+		$$=new_node("Args",@$.first_line,1,nodes);
+	}
     ;
 
  

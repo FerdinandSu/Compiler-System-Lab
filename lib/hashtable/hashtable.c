@@ -5,7 +5,7 @@
 
 #include "hashtable.h"
 #include "hashfunc.h"
-
+#define __WITH_MURMUR
 #ifdef __WITH_MURMUR
 #include "murmur.h"
 #endif //__WITH_MURMUR
@@ -84,9 +84,7 @@ void he_set_value(int flags, hash_entry *entry, void *value, size_t value_size);
 //-----------------------------------
 
 void ht_init(hash_table *table, ht_flags flags, double max_load_factor
-#ifndef __WITH_MURMUR
         , HashFunc *for_x86_32, HashFunc *for_x86_128, HashFunc *for_x64_128
-#endif //__WITH_MURMUR
         )
 {
 #ifdef __WITH_MURMUR
@@ -339,10 +337,10 @@ void** ht_keys(hash_table *table, unsigned int *key_count)
             *key_count += 1;
             tmp = tmp->next;
             // sanity check, should never actually happen
-            if(*key_count >= table->key_count) {
-                debug("ht_keys: too many keys, expected %d, got %d\n",
-                        table->key_count, *key_count);
-            }
+            // if(*key_count >= table->key_count) {
+            //     debug("ht_keys: too many keys, expected %d, got %d\n",
+            //             table->key_count, *key_count);
+            // }
         }
     }
 
@@ -354,9 +352,7 @@ void ht_clear(hash_table *table)
     ht_destroy(table);
 
     ht_init(table, table->flags, table->max_load_factor
-#ifndef __WITH_MURMUR
     , table->hashfunc_x86_32, table->hashfunc_x86_128, table->hashfunc_x64_128
-#endif //__WITH_MURMUR
     );
 }
 

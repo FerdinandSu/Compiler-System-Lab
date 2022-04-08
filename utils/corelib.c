@@ -7,6 +7,7 @@ class new_class(
 	class r = calloc(sizeof(struct class_t), 1);
 	r->schema = schema;
 	r->def = type_def;
+	return r;
 }
 class clscpy(class origin)
 {
@@ -40,7 +41,7 @@ int clseql(class t1, class t2)
 	switch (t2->schema)
 	{
 	case CLASS_STANDARD:
-		return t1->schema != t2->schema &&
+		return t1->schema == t2->schema &&
 			   t1->def.type == t2->def.type;
 	case CLASS_FUNCTION:
 		return clseql(t1, t2->def.func_def.type);

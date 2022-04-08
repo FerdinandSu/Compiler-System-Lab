@@ -1,5 +1,11 @@
 #include "syntax.translate.h"
+#include "utils/stack.h"
+#include "utils/list.h"
+#include "utils/expressions.h"
+#include "utils/symbols.h"
+#include "utils/statements.h"
 
+extern struct Node *empty_node;
 
 void translate_system_init()
 {
@@ -53,7 +59,7 @@ symbol get_scoped_symbol(string name)
     for (; has_next_stack_enumerator(e);
          move_next_stack_enumerator(e))
     {
-        symbol_table cur = get_current_stack_enumerator(e);
+        symbol_table cur = (symbol_table)get_current_stack_enumerator(e);
         r = get_symbol(cur, name);
         if (r != NULL)
             break;
@@ -125,7 +131,8 @@ list VarList(nodeptr node)
 {
     list l = new_list();
     symbol_table st = new_symbol_table();
-    for (nodeptr node_it = node;
+    nodeptr node_it = node;
+    for (;
          node_it->children_count == 3;
          node_it = node_it->children[2])
     {
@@ -139,6 +146,15 @@ list VarList(nodeptr node)
         add_symbol(st, param);
         add_list(l, param);
     }
+    symbol param = ParamDec(node_it->children[0]);
+    ASSERT_NOT_NULL(param);
+    if (has_symbol(st, param->name))
+    {
+        trans_err_x(3, node_it->line_num, param->name);
+        return NULL;
+    }
+    add_symbol(st, param);
+    add_list(l, param);
     destroy_symbol_table(st);
     return l;
 }
@@ -172,15 +188,16 @@ int ExtDef(nodeptr node)
     symbol func = FunDec(node->children[1], s);
     ASSERT_NOT_NULL(func);
     symbol origin = get_global_symbol(func->name);
-    if (origin != NULL && (origin->flags.implemented || !func->flags.implemented))
+    int is_implement = !streql(node->children[2]->type, "SEM");
+    if (origin != NULL && (origin->flags.implemented || !is_implement))
     {
         trans_err_x(4, node->line_num, func->name);
         return NULL;
     }
-    int is_implement = !streql(node->children[2]->type, "SEM");
+
     if (is_implement)
     {
-        func->flags.implemented = 1;
+        
         if (origin == NULL)
         {
             add_global_symbol(func);
@@ -191,6 +208,7 @@ int ExtDef(nodeptr node)
         symbol_table args = new_symbol_table_from_list(func->type->def.func_def.params);
         statement_comp compst = CompSt(node->children[2], args);
         return_type = NULL;
+        origin->flags.implemented = 1;
         origin->reference.func = compst;
     }
     else
@@ -286,29 +304,36 @@ statement Stmt(nodeptr node)
 
 symbol_table DefList(nodeptr node, symbol_table base_symbols)
 {
-    if (node->children_count == 1)
-        return base_symbols == NULL ? new_symbol_table() : base_symbols;
-    // Def DefList
-    symbol_table r = DefList(node->children[1], NULL);
-    symbol_table sublist = Def(node->children[0]);
-    symbol_table_enumerator e;
-    for (e = create_symbol_table_enumerator(sublist);
-         has_next_symbol_table_enumerator(e);
-         move_next_symbol_table_enumerator(e))
+    symbol_table r = base_symbols == NULL ? new_symbol_table() : base_symbols;
+    if (node == empty_node)
+        return r;
+    nodeptr node_it;
+    for (node_it = node;
+         node_it != empty_node;
+         node_it = node_it->children[1])
     {
-        symbol cur = get_current_symbol_table_enumerator(e);
-        if (has_symbol(r, cur->name))
+        symbol_table sublist = Def(node_it->children[0]);
+        ASSERT_NOT_NULL(sublist);
+        symbol_table_enumerator e;
+        for (e = create_symbol_table_enumerator(sublist);
+             has_next_symbol_table_enumerator(e);
+             move_next_symbol_table_enumerator(e))
         {
-            trans_err_x(3, node->line_num, cur->name);
-        }
-        else
-        {
-            add_symbol(r, cur);
-        }
-    }
-    destroy_symbol_table_enumerator(e);
-    destroy_symbol_table(sublist);
 
+            symbol cur = get_current_symbol_table_enumerator(e);
+            if (has_symbol(r, cur->name))
+            {
+                trans_err_x(3, node_it->line_num, cur->name);
+                return NULL;
+            }
+            else
+            {
+                add_symbol(r, cur);
+            }
+        }
+        destroy_symbol_table_enumerator(e);
+        destroy_symbol_table(sublist);
+    }
     return r;
 }
 
@@ -322,30 +347,29 @@ symbol_table Def(nodeptr node)
 symbol_table DecList(nodeptr node, class type)
 {
     symbol_table r = new_symbol_table();
-    // -> Dec
-    symbol dec = Dec(node->children[0], type);
-    add_symbol(r, dec);
-    // + COMMA DecList
-    if (node->children_count == 3)
+    nodeptr node_it = node;
+    for (; node_it->children_count == 3; node_it = node_it->children[2])
     {
-        symbol_table sublist = DecList(node->children[2], type);
-        symbol_table_enumerator e;
-        for (e = create_symbol_table_enumerator(sublist);
-             has_next_symbol_table_enumerator(e);
-             move_next_symbol_table_enumerator(e))
+        symbol cur = Dec(node_it->children[0], type);
+        ASSERT_NOT_NULL(cur);
+        if (has_symbol(r, cur->name))
         {
-            symbol cur = get_current_symbol_table_enumerator(e);
-            if (has_symbol(r, cur->name))
-            {
-                trans_err_x(3, node->line_num, cur->name);
-            }
-            else
-            {
-                add_symbol(r, cur);
-            }
+            trans_err_x(3, node_it->line_num, cur->name);
         }
-        destroy_symbol_table_enumerator(e);
-        destroy_symbol_table(sublist);
+        else
+        {
+            add_symbol(r, cur);
+        }
+    }
+    symbol cur = Dec(node_it->children[0], type);
+    ASSERT_NOT_NULL(cur);
+    if (has_symbol(r, cur->name))
+    {
+        trans_err_x(3, node->line_num, cur->name);
+    }
+    else
+    {
+        add_symbol(r, cur);
     }
     return r;
 }
@@ -397,7 +421,7 @@ class StructSpecifier(nodeptr node)
         int is_symbol = node->children[1] != empty_node;
         symbol stu = new_symbol(
             r,
-            is_symbol ? strdup(node->children[1]->children[0]->value.strv) : empty_string,
+            is_symbol ? strdup(node->children[1]->children[0]->value.strv) : "",
             1, 1);
         if (is_symbol)
         {
@@ -446,16 +470,16 @@ expression CONST(nodeptr node)
 }
 expression parse_exp_single(nodeptr node)
 {
-    nodeptr head = node->children[0];
     // -> ID
-    if (streql(head->type, "ID"))
+    if (streql(node->type, "ID"))
     {
-        expression id = ExpID(head, get_scoped_symbol);
+        expression id = ExpID(node, get_scoped_symbol);
         if (id == NULL)
         {
-            trans_err_x(1, node->line_num, head->value.strv);
+            trans_err_x(1, node->line_num, node->value.strv);
             return NULL;
         }
+        return id;
     }
     // -> CONST_INT | CONST_FLOAT
     return CONST(node);
@@ -496,6 +520,8 @@ operator_type parse_operator(string name)
         return OP_SUB;
     if (streql(name, "NEQ"))
         return OP_SUB;
+    trans_err_x(0, 505, name);
+    return OP_ADD;
 }
 class merge_type(operator_type op, class t1, class t2)
 {
@@ -518,6 +544,8 @@ class merge_type(operator_type op, class t1, class t2)
     case OP_NEQ:
         return clseql(t1, t2) ? class_int() : NULL;
     default:
+        trans_err_x(0, 529, "merge_type");
+        return NULL;
         break;
     }
 }
@@ -538,7 +566,7 @@ expression parse_exp_triple(nodeptr node)
     // -> ID LP RP
     if (streql(n2->type, "LP"))
     {
-        expression func_id = ExpID(n1, get_global_symbol);
+        expression func_id = ExpID(n1, get_scoped_symbol);
         if (func_id == NULL)
         {
             trans_err_x(2, node->line_num, n1->value.strv);
@@ -616,7 +644,6 @@ expression parse_exp_triple(nodeptr node)
  */
 list Args(nodeptr node)
 {
-
     list l = new_list();
     nodeptr node_it = node;
     for (; node_it->children_count == 3; node_it = node_it->children[2])
@@ -672,7 +699,7 @@ expression parse_exp_quadruple(nodeptr node)
     // -> ID LP Args RP
     if (streql(n2->type, "LP"))
     {
-        expression func_id = ExpID(n1, get_global_symbol);
+        expression func_id = ExpID(n1, get_scoped_symbol);
         if (func_id == NULL)
         {
             trans_err_x(2, node->line_num, n1->value.strv);
@@ -683,7 +710,7 @@ expression parse_exp_quadruple(nodeptr node)
             trans_err_x(11, node->line_num, n1->value.strv);
             return NULL;
         }
-        list args = Args(n2);
+        list args = Args(n3);
         ASSERT_NOT_NULL(args);
         if (!func_param_eql(func_id->type->def.func_def.params, args))
         {
@@ -708,15 +735,18 @@ expression parse_exp_quadruple(nodeptr node)
         trans_err(12, n3->line_num);
         return NULL;
     }
-    return new_expression(OP_ARR, arr->type->def.arr_def.type, 0, new_list_of(2,arr, idx));
+    return new_expression(OP_ARR, arr->type->def.arr_def.type, 0, new_list_of(2, arr, idx));
 }
 expression Exp(nodeptr node)
 {
     switch (node->children_count)
     {
-    case 1:
+    case 0:
         // 常量和标识符
         return parse_exp_single(node);
+    case 1:
+        // 常量和标识符
+        return parse_exp_single(node->children[0]);
     case 2:
         // 各种一元运算符
         return parse_exp_triple(node);
@@ -730,4 +760,21 @@ expression Exp(nodeptr node)
         trans_err(0, node->line_num);
         return NULL;
     }
+}
+
+void global_symbol_check()
+{
+    symbol_table_enumerator e;
+    for (e = create_symbol_table_enumerator(global_symbols);
+         has_next_symbol_table_enumerator(e);
+         move_next_symbol_table_enumerator(e))
+    {
+
+        symbol cur = get_current_symbol_table_enumerator(e);
+        if (cur->type->schema == CLASS_FUNCTION && cur->flags.implemented == 0)
+        {
+            trans_err_x(18, 6, cur->name);
+        }
+    }
+    destroy_symbol_table_enumerator(e);
 }

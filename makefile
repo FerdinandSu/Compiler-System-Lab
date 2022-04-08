@@ -7,19 +7,22 @@ CFLAGS	= -Wall -Wextra -g -DDEBUG -DTEST $(MURMUR)
 
 all: clean parser
 
-parser: main.c syntax.tab.c lex.yy.c utils
-	gcc *.c -lc -lfl -ly -g -o parser
-#syntax.tab.c syntax.tab.h: syntax.y
-#	$(YYAC) -vd syntax.y
+parser: main.c syntax.tab.c lex.yy.c hashtable-lib
+	$(CC) $(CFLAGS) ./syntax.tab.c main.c syntax.translate.c utils/*.c *.a -g -o parser
+syntax.tab.c syntax.tab.h: syntax.y
+	$(YYAC) -vd syntax.y
 
-#lex.yy.c: lexical.l
-#	$(LEX) -o $@ $<
+lex.yy.c: lexical.l
+	$(LEX) -o $@ $<
 
 hashtable-lib: $(LIB_HASHTABLE)/hashtable.h $(LIB_HASHTABLE)/hashtable.c $(LIB_HASHTABLE)/murmur.h $(LIB_HASHTABLE)/murmur.c
 	$(CC) $(CFLAGS) -c $(LIB_HASHTABLE)/hashtable.c $(LIB_HASHTABLE)/murmur.c
 	ar crf libhashtable.a hashtable.o murmur.o
 
 main.o: main.c
+
+utils : 
+	gcc -c utils/*.
 
 syntax.translate.o : syntax.translate.c syntax.translate.h
 
@@ -35,11 +38,7 @@ scanner: main.c lex.yy.c
 head: clean syntax.tab.h
 
 test2: all
-	for i in {1..21}  \
-	do  \
-	echo "\n\033[34m<1.c>\033[0m\n" && \
-	./parser ./examples/lab2/$i.c\
-	done
+
 
 test1: testreq1 testopt1
 
@@ -57,6 +56,6 @@ testopt1: all
 	&& echo "\n\033[34m<9.c>\033[0m\n" && ./parser ./examples/lab1/9.c \
 	&& echo "\n\033[34m<10.c>\033[0m\n" && ./parser ./examples/lab1/10.c
 clean:
-	-@ rm parser syntax.output *.o
+	-@ rm parser syntax.output *.o syntax.tab.* lex.yy.c
 
 debug: clean test
