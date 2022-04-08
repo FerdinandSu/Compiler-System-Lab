@@ -1,6 +1,7 @@
+#pragma once
+
 #define __WITH_MURMUR
-#include "../syntax.tab.c"
-#include "../lib/hashtable/hashtable.h"
+#include "lib/hashtable/hashtable.h"
 #include "list.h"
 #include "corelib.h"
 #include "statements.h"
@@ -22,6 +23,7 @@ symbol new_symbol(class type, string name, int readonly, int implemented);
 class new_class(
 	class_schema schema, class_def type_def);
 symbol_table new_symbol_table();
+symbol_table new_symbol_table_from_list(list l);
 void destroy_symbol_table(symbol_table table);
 symbol get_symbol(symbol_table slist, string name);
 int has_symbol(symbol_table slist, string name);
@@ -34,7 +36,6 @@ typedef struct symbol_table_enumerator_t
 	size_t entry_count;
 	size_t current_count;
 } * symbol_table_enumerator;
-
 symbol_table_enumerator create_symbol_table_enumerator(symbol_table t);
 void destroy_symbol_table_enumerator(symbol_table_enumerator e);
 int has_next_symbol_table_enumerator(symbol_table_enumerator e);

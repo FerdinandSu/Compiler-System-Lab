@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "syntax.tab.h"
+#pragma once
 void lex_err(int ln,char* desc);
 void lex_err_x(int ln,char* expr,char* desc);
 void lex_log(int ln,char* lex_unit);

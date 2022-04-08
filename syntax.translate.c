@@ -1,6 +1,5 @@
 #include "syntax.translate.h"
-typedef struct Node synnode;
-typedef synnode *nodeptr;
+
 
 void translate_system_init()
 {
@@ -33,16 +32,6 @@ void add_global_symbol(symbol sym)
     add_symbol(global_symbols, sym);
 }
 /**
- * @brief Get the global symbol object
- *
- * @param name
- * @return symbol
- */
-symbol get_global_symbol(string name)
-{
-    return get_symbol(global_symbols, name);
-}
-/**
  * @brief
  *
  * @param name
@@ -57,11 +46,6 @@ symbol get_local_symbol(string name)
     return local_symbols ? get_symbol(local_symbols, name) : NULL;
 }
 
-int has_symbol_anywhere(string name)
-{
-    return has_scoped_symbol(name) ||
-           has_global_symbol(name);
-}
 symbol get_scoped_symbol(string name)
 {
     stack_enumerator e = create_stack_enumerator(scoped_symbols);
@@ -83,27 +67,229 @@ class Specifier(nodeptr node)
     // -> TYPE
     if (streql(head->type, "TYPE"))
     {
-        return streql(head->value.strv, "int") ? class_int : class_float;
+        return streql(head->value.strv, "int") ? class_int() : class_float();
     }
     // -> StructSpecifier
     return StructSpecifier(head);
 }
-
-statement_comp CompSt(nodeptr node){
-    ASSERT_NOT_NULL(node);
+list StmtList(nodeptr node)
+{
+    list l = new_list();
+    for (nodeptr node_it = node;
+         node_it->children_count == 2;
+         node_it = node_it->children[1])
+    {
+        statement stmt = Stmt(node_it->children[0]);
+        ASSERT_NOT_NULL(stmt);
+        add_list(l, stmt);
+    }
+    return l;
 }
+statement_comp CompSt(nodeptr node, symbol_table base_symbols)
+{
+    ASSERT_NOT_NULL(node);
+    symbol_table comp_symbols = DefList(node->children[1], base_symbols);
+    ASSERT_NOT_NULL(comp_symbols);
+    push_stack(scoped_symbols, comp_symbols);
+    list stmtlist = StmtList(node->children[2]);
+    pop_stack(scoped_symbols);
+    ASSERT_NOT_NULL(stmtlist);
+    return new_statement_comp(stmtlist, comp_symbols);
+}
+/**
+ * @brief
+ *
+ * @param node
+ * @return list<symbol>
+ */
+symbol FunDec(nodeptr node, class ret_type)
+{
 
+    list varlist =
+        node->children_count == 4 ? VarList(node->children[2]) : new_list();
+    ASSERT_NOT_NULL(varlist);
+    class_def cdef = {
+        .func_def = {
+            .params = varlist,
+            .type = ret_type}};
+    class fclass = new_class(CLASS_FUNCTION, cdef);
+    return new_symbol(fclass, node->children[0]->value.strv, 1, 0);
+}
+/**
+ * @brief
+ *
+ * @param node
+ * @return list<symbol>
+ */
+list VarList(nodeptr node)
+{
+    list l = new_list();
+    symbol_table st = new_symbol_table();
+    for (nodeptr node_it = node;
+         node_it->children_count == 3;
+         node_it = node_it->children[2])
+    {
+        symbol param = ParamDec(node_it->children[0]);
+        ASSERT_NOT_NULL(param);
+        if (has_symbol(st, param->name))
+        {
+            trans_err_x(3, node_it->line_num, param->name);
+            return NULL;
+        }
+        add_symbol(st, param);
+        add_list(l, param);
+    }
+    destroy_symbol_table(st);
+    return l;
+}
+void Program(nodeptr node)
+{
+    ExtDefList(node->children[0]);
+}
+void ExtDefList(nodeptr node)
+{
+    if (node == empty_node)
+        return;
+    ExtDef(node->children[0]);
+    ExtDefList(node->children[1]);
+}
+int ExtDef(nodeptr node)
+{
+    class s = Specifier(node->children[0]);
+    ASSERT_NOT_NULL(s);
+    // -> Specifier SEM
+    if (node->children_count == 2)
+    {
+        return 1;
+    }
+    // -> Specifier ExtDecList SEM
+    if (streql(node->children[1]->type, "ExtDecList"))
+    {
+        ExtDecList(node->children[1], s);
+        return 1;
+    }
+    // -> Specifier FunDec CompSt|SEM
+    symbol func = FunDec(node->children[1], s);
+    ASSERT_NOT_NULL(func);
+    symbol origin = get_global_symbol(func->name);
+    if (origin != NULL && (origin->flags.implemented || !func->flags.implemented))
+    {
+        trans_err_x(4, node->line_num, func->name);
+        return NULL;
+    }
+    int is_implement = !streql(node->children[2]->type, "SEM");
+    if (is_implement)
+    {
+        func->flags.implemented = 1;
+        if (origin == NULL)
+        {
+            add_global_symbol(func);
+            origin = get_global_symbol(func->name);
+        }
+
+        return_type = s;
+        symbol_table args = new_symbol_table_from_list(func->type->def.func_def.params);
+        statement_comp compst = CompSt(node->children[2], args);
+        return_type = NULL;
+        origin->reference.func = compst;
+    }
+    else
+    {
+        add_global_symbol(func);
+    }
+    return 1;
+}
+void ExtDecList(nodeptr node, class s)
+{
+    nodeptr node_it = node;
+    for (; node_it->children_count == 3; node_it = node_it->children[2])
+    {
+        ExtDec(node_it->children[0], s);
+    }
+    ExtDec(node_it->children[0], s);
+}
+int ExtDec(nodeptr node, class s)
+{
+    symbol sym = VarDec(node, s);
+    ASSERT_NOT_NULL(sym);
+    if (has_global_symbol(sym->name))
+    {
+        trans_err_x(3, node->line_num, sym->name);
+        return NULL;
+    }
+    add_global_symbol(sym);
+    return 1;
+}
+symbol ParamDec(nodeptr node)
+{
+    class type = Specifier(node->children[0]);
+    ASSERT_NOT_NULL(type);
+    return VarDec(node->children[1], type);
+}
+/**
+ * @brief
+ * 设定函数返回值类型。默认为空。
+ * 使用时由调用Stmt()者维护。
+ */
+class return_type;
 statement Stmt(nodeptr node)
 {
     ASSERT_NOT_NULL(node);
+    expression simple_exp;
+    expression return_exp;
+    switch (node->children_count)
+    {
+    case 1:
+        // -> CompSt
+        return (statement)CompSt(node->children[0], NULL);
+    case 2:
+        // -> Exp SEM
+        simple_exp = Exp(node->children[0]);
+        ASSERT_NOT_NULL(simple_exp);
+        return new_statement(STMT_SIMPLE, new_list_singleton(simple_exp));
+    case 3:
+        // -> RETURN Exp SEM
+        return_exp = Exp(node->children[1]);
+        ASSERT_NOT_NULL(return_exp);
+        if (return_type != NULL &&
+            !clseql(return_type, return_exp->type))
+        {
+            trans_err(8, node->line_num);
+            return NULL;
+        }
+        return new_statement(STMT_RETURN, new_list_singleton(return_exp));
+    default:
+        break;
+    }
+    // WHILE, IF
+    expression cond_exp = Exp(node->children[2]);
+    ASSERT_NOT_NULL(cond_exp);
+    if (!clseql(cond_exp->type, class_int()))
+    {
+        trans_err(20, node->line_num);
+        return NULL;
+    }
+    statement s1 = Stmt(node->children[4]);
+    ASSERT_NOT_NULL(s1);
+    if (node->children_count == 7)
+    {
+        statement s2 = Stmt(node->children[6]);
+        ASSERT_NOT_NULL(s2);
+        return new_statement(STMT_IF_ELSE, new_list_of(3, cond_exp, s1, s2));
+    }
+    if (streql(node->children[0]->type, "IF"))
+    {
+        return new_statement(STMT_IF, new_list_of(2, cond_exp, s1));
+    }
+    return new_statement(STMT_WHILE, new_list_of(2, cond_exp, s1));
 }
 
-symbol_table DefList(nodeptr node)
+symbol_table DefList(nodeptr node, symbol_table base_symbols)
 {
     if (node->children_count == 1)
-        return new_symbol_table();
+        return base_symbols == NULL ? new_symbol_table() : base_symbols;
     // Def DefList
-    symbol_table r = DefList(node->children[1]);
+    symbol_table r = DefList(node->children[1], NULL);
     symbol_table sublist = Def(node->children[0]);
     symbol_table_enumerator e;
     for (e = create_symbol_table_enumerator(sublist);
@@ -113,7 +299,7 @@ symbol_table DefList(nodeptr node)
         symbol cur = get_current_symbol_table_enumerator(e);
         if (has_symbol(r, cur->name))
         {
-            trans_err_x(3, node->line_num, cur->name, "Redefined variable");
+            trans_err_x(3, node->line_num, cur->name);
         }
         else
         {
@@ -151,7 +337,7 @@ symbol_table DecList(nodeptr node, class type)
             symbol cur = get_current_symbol_table_enumerator(e);
             if (has_symbol(r, cur->name))
             {
-                trans_err_x(3, node->line_num, cur->name, "Redefined variable");
+                trans_err_x(3, node->line_num, cur->name);
             }
             else
             {
@@ -173,7 +359,7 @@ symbol Dec(nodeptr node, class type)
     {
         expression rightValue = Exp(node->children[2]);
         if (!clseql(type, rightValue->type))
-            trans_err(5, node->line_num, "Type mismatched for assignment");
+            trans_err(5, node->line_num);
     }
     return var;
 }
@@ -203,12 +389,12 @@ class StructSpecifier(nodeptr node)
     // -> STRUCT OptTag LC DefList RC
     if (node->children_count == 5)
     {
-        symbol_table studef = DefList(node->children[3]);
+        symbol_table studef = DefList(node->children[3], NULL);
         class_def def = {.stu_def = studef};
         class r = new_class(
             CLASS_STRUCT,
             def);
-        int is_symbol = node->children[1] == empty_node;
+        int is_symbol = node->children[1] != empty_node;
         symbol stu = new_symbol(
             r,
             is_symbol ? strdup(node->children[1]->children[0]->value.strv) : empty_string,
@@ -217,7 +403,7 @@ class StructSpecifier(nodeptr node)
         {
             if (has_global_symbol(stu->name))
             {
-                trans_err_x(16, node->line_num, stu->name, "Duplicated name");
+                trans_err_x(16, node->line_num, stu->name);
             }
             else
             {
@@ -230,19 +416,19 @@ class StructSpecifier(nodeptr node)
     string name = node->children[1]->children[0]->value.strv;
     if (!has_global_symbol(name))
     {
-        trans_err_x(17, node->line_num, name, "Undefined structure");
+        trans_err_x(17, node->line_num, name);
         return NULL;
     }
     symbol origin = get_global_symbol(name);
     if (origin->type->schema != CLASS_STRUCT)
     {
-        trans_err_x(17, node->line_num, name, "Undefined structure");
+        trans_err_x(17, node->line_num, name);
         return NULL;
     }
     return origin->type;
 }
 typedef symbol (*symbol_table_accessor)(string);
-expression ID(nodeptr node, symbol_table_accessor get_x_symbol)
+expression ExpID(nodeptr node, symbol_table_accessor get_x_symbol)
 {
     string idname = node->value.strv;
     symbol id = get_x_symbol(idname);
@@ -264,10 +450,10 @@ expression parse_exp_single(nodeptr node)
     // -> ID
     if (streql(head->type, "ID"))
     {
-        expression id = ID(head, get_scoped_symbol);
+        expression id = ExpID(head, get_scoped_symbol);
         if (id == NULL)
         {
-            trans_err_x(1, node->line_num, head->value.strv, "Undefined variable");
+            trans_err_x(1, node->line_num, head->value.strv);
             return NULL;
         }
     }
@@ -282,7 +468,7 @@ expression parse_exp_tuple(nodeptr node)
         return NULL;
     return new_normal_unary_expression(
         streql(node->children[0]->type, "NEG") ? OP_NEG : OP_NOT,
-        subex->type, new_list_singleton(subex));
+        subex->type, subex);
 }
 operator_type parse_operator(string name)
 {
@@ -352,23 +538,23 @@ expression parse_exp_triple(nodeptr node)
     // -> ID LP RP
     if (streql(n2->type, "LP"))
     {
-        expression func_id = ID(n1, get_global_symbol);
+        expression func_id = ExpID(n1, get_global_symbol);
         if (func_id == NULL)
         {
-            trans_err_x(2, node->line_num, n1->value.strv, "Undefined function");
+            trans_err_x(2, node->line_num, n1->value.strv);
             return NULL;
         }
         if (func_id->type->schema != CLASS_FUNCTION)
         {
-            trans_err_x(11, node->line_num, n1->value.strv, "Not a function");
+            trans_err_x(11, node->line_num, n1->value.strv);
             return NULL;
         }
         if (func_id->type->def.func_def.params->count != 0)
         {
-            trans_err(9, n1->line_num, "ParamList not matched");
+            trans_err(9, n1->line_num);
             return NULL;
         }
-        return new_expression(OP_CALL, func_id->type->def.func_def.type, new_list_singleton(func_id));
+        return new_expression(OP_CALL, func_id->type->def.func_def.type, 1, new_list_singleton(func_id));
     }
     expression lv = Exp(n1);
     if (lv == NULL)
@@ -377,15 +563,15 @@ expression parse_exp_triple(nodeptr node)
     {
         if (lv->type->schema != CLASS_STRUCT)
         {
-            trans_err(13, n1->line_num, "Illegal use of \".\"");
+            trans_err(13, n1->line_num);
             return NULL;
         }
         symbol_table origin_scope = local_symbols;
         local_symbols = lv->type->def.stu_def;
-        expression stu_member_id = ID(n3, get_local_symbol);
+        expression stu_member_id = ExpID(n3, get_local_symbol);
         if (stu_member_id == NULL)
         {
-            trans_err_x(14, n1->line_num, n3->value.strv, "Undefined field");
+            trans_err_x(14, n1->line_num, n3->value.strv);
             return NULL;
         }
         // 恢复符号表
@@ -401,13 +587,13 @@ expression parse_exp_triple(nodeptr node)
     {
         if (lv->flags.readonly)
         {
-            trans_err(6, n2->line_num, "The left-hand side of an assignment must be a variable");
+            trans_err(6, n2->line_num);
             return NULL;
         }
         class merged_type = merge_type(OP_ASSIGN, lv->type, rv->type);
         if (merged_type == NULL)
         {
-            trans_err(5, n2->line_num, "Type mismatched for assignment");
+            trans_err(5, n2->line_num);
             return NULL;
         }
         return new_normal_binary_expression(OP_ASSIGN, merged_type, lv, rv);
@@ -417,7 +603,7 @@ expression parse_exp_triple(nodeptr node)
     class merged_type2 = merge_type(op, lv->type, rv->type);
     if (merged_type2 == NULL)
     {
-        trans_err(7, n2->line_num, "Type mismatched for operands");
+        trans_err(7, n2->line_num);
         return NULL;
     }
     return new_normal_binary_expression(op, merged_type2, lv, rv);
@@ -486,22 +672,22 @@ expression parse_exp_quadruple(nodeptr node)
     // -> ID LP Args RP
     if (streql(n2->type, "LP"))
     {
-        expression func_id = ID(n1, get_global_symbol);
+        expression func_id = ExpID(n1, get_global_symbol);
         if (func_id == NULL)
         {
-            trans_err_x(2, node->line_num, n1->value.strv, "Undefined function");
+            trans_err_x(2, node->line_num, n1->value.strv);
             return NULL;
         }
         if (func_id->type->schema != CLASS_FUNCTION)
         {
-            trans_err_x(11, node->line_num, n1->value.strv, "Not a function");
+            trans_err_x(11, node->line_num, n1->value.strv);
             return NULL;
         }
         list args = Args(n2);
         ASSERT_NOT_NULL(args);
         if (!func_param_eql(func_id->type->def.func_def.params, args))
         {
-            trans_err(9, n1->line_num, "ParamList not matched");
+            trans_err(9, n1->line_num);
             return NULL;
         }
 
@@ -512,17 +698,17 @@ expression parse_exp_quadruple(nodeptr node)
     ASSERT_NOT_NULL(arr);
     if (arr->type->schema != CLASS_ARRAY)
     {
-        trans_err(10, n1->line_num, "Not an array");
+        trans_err(10, n1->line_num);
         return NULL;
     }
     expression idx = Exp(n3);
     ASSERT_NOT_NULL(idx);
     if (!clseql(idx->type, class_int()))
     {
-        trans_err(12, n3->line_num, "Array index is not an integer");
+        trans_err(12, n3->line_num);
         return NULL;
     }
-    return new_expression(OP_ARR, arr->type->def.arr_def.type, 0, new_list_of(arr, idx));
+    return new_expression(OP_ARR, arr->type->def.arr_def.type, 0, new_list_of(2,arr, idx));
 }
 expression Exp(nodeptr node)
 {
@@ -541,7 +727,7 @@ expression Exp(nodeptr node)
         // 数组和有参数调用
         return parse_exp_quadruple(node);
     default:
-        trans_err(-1, node->line_num, "Unknown Expression.");
+        trans_err(0, node->line_num);
         return NULL;
     }
 }

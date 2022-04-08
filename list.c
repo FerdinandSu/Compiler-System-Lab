@@ -78,3 +78,4 @@ list new_list_of(int count, ...)
     va_end(vl);
 
     return l;
+}

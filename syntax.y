@@ -4,6 +4,7 @@
 #include <string.h>
 #include <memory.h>
 #include "lex.yy.c"
+#pragma once
 
 extern int yylex();
 extern int yyparse();
@@ -186,6 +187,15 @@ ExtDef: Specifier ExtDecList SEM	{
 			new_fnode("SEM",@2.first_line)
 			};
 		$$=new_node("ExtDef",@$.first_line,2,nodes);
+		max_line_num=@$.first_line;
+	}
+	| Specifier FunDec SEM	{
+		struct Node* nodes[]={
+			$1,
+			$2,
+			new_fnode("SEM",@3.first_line)
+			};
+		$$=new_node("ExtDef",@$.first_line,3,nodes);
 		max_line_num=@$.first_line;
 	}
     | Specifier FunDec CompSt	{
@@ -675,7 +685,7 @@ struct Node* create_node(char* type,union NodeValue value, int children_count,st
     r->children_count=children_count;
     r->line_num=ln;
 	if (YYDEBUG){
-		printf("NodeCreated[%x]: {Type=%s,children_count=%d,ln=%d}\n",r,r->type,r->children_count,r->line_num);
+		printf("NodeCreated[%x]: {Type=%s,children_count=%d,ln=%d}\n",(unsigned int)r,r->type,r->children_count,r->line_num);
 	}
 
 

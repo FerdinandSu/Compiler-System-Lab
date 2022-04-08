@@ -2,22 +2,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
-#include "syntax.tab.c"
+#include "syntax.translate.h"
+//#include "syntax.tab.c"
 
 #define YYDEBUG 0
 #define LEXDEBUG 0
 
-#define RED "\033[31m"
-#define GREEN "\033[32m"
-#define YELLOW "\033[33m"
-#define BLUE "\033[34m"
-#define MAGENTA "\033[35m"
-#define CYAN "\033[36m"
-#define CLEAN "\033[0m"
+
 
 extern int max_line_num;
 extern int yylineno;
-extern struct Node* root;
+//nodeptr root;
 int err_count=0;
 
 int main(int argc, char** argv)
@@ -30,10 +25,15 @@ int main(int argc, char** argv)
     }
     yyrestart(f);
     yyparse();
-    cprintf(0,root);
+    //cprintf(0,root);
+    translate_system_init();
+    Program(root);
+    if(err_count==0){
+        printf(GREEN"Translation Completed Successfully.\n"CLEAN);
+    }
     return 0;
 }
-void cprintf(int lv,struct Node* node)
+void cprintf(int lv,nodeptr node)
 {
     if (err_count||node == NULL||!strcmp(node->type, "EMPTY"))
     {
@@ -91,15 +91,15 @@ void lex_err_x(int ln, char* expr,char* desc)
     err_count++;
     printf(RED"Error type A at Line %d: %s \"%s\".\n"CLEAN,ln,desc,expr);
 }
-void trans_err(int type, int ln, char* desc)
+void trans_err(int type, int ln)
 {
     err_count++;
-    printf(RED"\033[31mError type %d at Line %d: %s.\n"CLEAN,type,ln,desc);
+    printf(RED"\033[31mError type %d at Line %d: %s.\n"CLEAN,type,ln,trans_errors[type]);
 }
-void trans_err_x(int type, int ln, char* expr, char* desc)
+void trans_err_x(int type, int ln, char* expr)
 {
     err_count++;
-    printf(RED"Error type %d at Line %d: %s \"%s\".\n"CLEAN,type,ln,desc,expr);
+    printf(RED"Error type %d at Line %d: %s \"%s\".\n"CLEAN,type,ln,trans_errors[type],expr);
 }
 void yyerror(const char* s)
 {

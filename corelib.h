@@ -1,4 +1,15 @@
+#pragma once
 #include<memory.h>
+#include "syntax.tab.h"
+#include "lib/hashtable/hashtable.h"
+
+#define RED "\033[31m"
+#define GREEN "\033[32m"
+#define YELLOW "\033[33m"
+#define BLUE "\033[34m"
+#define MAGENTA "\033[35m"
+#define CYAN "\033[36m"
+#define CLEAN "\033[0m"
 
 #define new(T) calloc(sizeof(T),1);
 #define ASSERT_NOT_NULL(o) if (o==NULL) return NULL
@@ -11,7 +22,7 @@ typedef struct control_flags_t
 typedef void *object;
 typedef hash_table *symbol_table;
 
-typedef string string;
+typedef char* string;
 
 typedef enum basic_type_t
 {
@@ -32,7 +43,7 @@ typedef struct array_def_t
 	struct class_t *type;
 	size_t size;
 } array_def;
-extern struct list_t;
+//extern struct list_t;
 typedef struct function_def_t
 {
 	struct class_t *type;
@@ -41,7 +52,7 @@ typedef struct function_def_t
 	 * 
 	 */
 	struct list_t* params
-} function_def;
+}function_def;
 typedef union class_def_t
 {
 	basic_type type;

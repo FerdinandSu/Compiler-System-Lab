@@ -1,4 +1,5 @@
 #include "symbols.h"
+#include"lib/hashtable/hashtable.h"
 
 symbol_table new_symbol_table()
 {
@@ -18,18 +19,18 @@ symbol new_symbol(class type, string name, int readonly, int implemented)
 }
 symbol get_symbol(symbol_table slist, string name)
 {
-    size_t v_size;
-    return ht_get(slist, name, strlen(name) + 1, &v_size);
+	size_t v_size;
+	return ht_get(slist, name, strlen(name) + 1, &v_size);
 }
 int has_symbol(symbol_table slist, string name)
 {
-    return ht_contains(slist, name, strlen(name) + 1);
+	return ht_contains(slist, name, strlen(name) + 1);
 }
 void add_symbol(symbol_table slist, symbol sym)
 {
-    size_t v_size;
-    return ht_insert(slist, sym->name, strlen(sym->name) + 1,
-                     sym, sizeof(struct symbol_t));
+	size_t v_size;
+	return ht_insert(slist, sym->name, strlen(sym->name) + 1,
+					 sym, sizeof(struct symbol_t));
 }
 void destroy_symbol_table(symbol_table table)
 {
@@ -61,4 +62,17 @@ symbol get_current_symbol_table_enumerator(symbol_table_enumerator e)
 void move_next_symbol_table_enumerator(symbol_table_enumerator e)
 {
 	e->current_count++;
+}
+
+symbol_table new_symbol_table_from_list(list l)
+{
+	list_enumerator e = create_enumerator(l);
+	symbol_table st = new_symbol_table();
+	for (; has_next_enumerator(e); move_next_enumerator(e))
+	{
+		symbol sym=get_current_enumerator(e);
+		add_symbol(st,sym);
+	}
+	destroy_enumerator(e);
+	return st;
 }

@@ -1,3 +1,4 @@
+#pragma once
 #include "corelib.h"
 #include "list.h"
 
@@ -26,7 +27,7 @@ typedef struct statement_t
  */
 typedef struct statement_comp_t
 {
-    statement_type type = STMT_COMP;
+    statement_type type;
     /**
      * @brief
      * list<statement>
