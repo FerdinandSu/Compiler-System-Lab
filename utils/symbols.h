@@ -11,6 +11,7 @@ typedef union symbol_ref_t
 {
 	statement_comp func;
 	expression var;
+	nodeptr origin;
 } symbol_ref;
 typedef struct symbol_t
 {

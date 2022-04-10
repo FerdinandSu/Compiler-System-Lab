@@ -4,6 +4,7 @@
 #include "utils/expressions.h"
 #include "utils/symbols.h"
 #include "utils/statements.h"
+#include "utils/corelib.h"
 
 extern struct Node *empty_node;
 
@@ -213,6 +214,7 @@ int ExtDef(nodeptr node)
     }
     else
     {
+        func->reference.origin=node;
         add_global_symbol(func);
     }
     return 1;
@@ -773,7 +775,7 @@ void global_symbol_check()
         symbol cur = get_current_symbol_table_enumerator(e);
         if (cur->type->schema == CLASS_FUNCTION && cur->flags.implemented == 0)
         {
-            trans_err_x(18, 6, cur->name);
+            trans_err_x(18, cur->reference.origin->line_num, cur->name);
         }
     }
     destroy_symbol_table_enumerator(e);

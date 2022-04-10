@@ -22,6 +22,21 @@ typedef struct control_flags_t
 typedef void *object;
 typedef hash_table *symbol_table;
 
+typedef struct node_t
+{
+    char *type;
+    union
+    {
+        int intv;
+        double fltv;
+        char *strv;
+    } value;
+    int children_count;
+    struct node_t **children;
+    int line_num;
+} synnode;
+typedef synnode *nodeptr;
+
 //typedef list symbol_table;
 
 typedef char* string;

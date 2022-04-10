@@ -1,21 +1,8 @@
 #pragma once
 
 #include "utils/mylib.h"
+#include "utils/corelib.h"
 
-typedef struct node_t
-{
-    char *type;
-    union
-    {
-        int intv;
-        double fltv;
-        char *strv;
-    } value;
-    int children_count;
-    struct node_t **children;
-    int line_num;
-} synnode;
-typedef synnode *nodeptr;
 
 symbol_table global_symbols;
 /**
