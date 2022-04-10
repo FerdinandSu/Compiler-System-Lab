@@ -38,7 +38,7 @@ scanner: main.c lex.yy.c
 head: clean syntax.tab.h
 
 test2: all
-
+	bash ./scripts/test-lab2.sh
 
 test1: testreq1 testopt1
 
