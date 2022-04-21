@@ -1,8 +1,7 @@
 #pragma once
 
-#include "utils/mylib.h"
-#include "utils/corelib.h"
-
+#include "mylib.h"
+#include "corelib.h"
 
 symbol_table global_symbols;
 /**
@@ -14,6 +13,7 @@ stack scoped_symbols;
 void translate_system_init();
 void Program(nodeptr node);
 
+void add_global_symbol(symbol sym);
 
 class Specifier(nodeptr node);
 list StmtList(nodeptr node);

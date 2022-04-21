@@ -17,7 +17,12 @@ typedef struct control_flags_t
 {
 	int implemented : 1;
 	int readonly : 1;
-	int padding : 30;
+	/**
+	 * @brief 是否为内建符号(read=1和write=2函数)
+	 * 
+	 */
+	int builtin:2;
+	int padding : 28;
 } control_flags;
 typedef void *object;
 typedef hash_table *symbol_table;
@@ -36,6 +41,10 @@ typedef struct node_t
     int line_num;
 } synnode;
 typedef synnode *nodeptr;
+
+int streql(char *s1, char *s2);
+extern void trans_err(int type, int ln);
+extern void trans_err_x(int type, int ln, char *expr);
 
 //typedef list symbol_table;
 

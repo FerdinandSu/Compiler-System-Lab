@@ -8,7 +8,7 @@ CFLAGS	= -Wall -Wextra -g -DDEBUG -DTEST $(MURMUR)
 all: clean parser
 
 parser: main.c syntax.tab.c lex.yy.c hashtable-lib
-	$(CC) $(CFLAGS) ./syntax.tab.c main.c syntax.translate.c utils/*.c *.a -g -o parser
+	$(CC) $(CFLAGS) ./syntax.tab.c main.c utils/*.c *.a -g -o parser
 syntax.tab.c syntax.tab.h: syntax.y
 	$(YYAC) -vd syntax.y
 
@@ -23,8 +23,6 @@ main.o: main.c
 
 utils : 
 	gcc -c utils/*.
-
-syntax.translate.o : syntax.translate.c syntax.translate.h
 
 syntax.tab.o : syntax.tab.c syntax.tab.h
 

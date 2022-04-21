@@ -2,13 +2,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
-#include "syntax.translate.h"
+#include "utils/semantic.h"
+#include "utils/irruntime.h"
 //#include "syntax.tab.c"
 
 #define YYDEBUG 0
 #define LEXDEBUG 0
 
-char* trans_errors[] = {
+char *trans_errors[] = {
     "Unknown Expression",
     "Undefined variable",
     "Undefined function",
@@ -34,38 +35,47 @@ char* trans_errors[] = {
 extern int max_line_num;
 extern int yylineno;
 nodeptr root;
-int err_count=0;
+int err_count = 0;
 
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
-    if(argc<=1)return 1;
-    FILE* f=fopen(argv[1],"r");
-    if(!f){
+    if (argc <= 1)
+        return 1;
+    FILE *f = fopen(argv[1], "r");
+    if (!f)
+    {
         perror(argv[1]);
         return 1;
     }
     yyrestart(f);
     yyparse();
-    //cprintf(0,root);
+    if (root == NULL)
+    {
+        printf(RED "Syntax Error.\n" CLEAN);
+        return 1;
+    }
+    // cprintf(0,root);
     translate_system_init();
+    builtin_symbol_init();
     Program(root);
     global_symbol_check();
-    if(err_count==0){
-        printf(GREEN"Translation Completed Successfully.\n"CLEAN);
+    if (err_count == 0)
+    {
+        printf(GREEN "Translation Completed Successfully.\n" CLEAN);
     }
     return 0;
 }
-void cprintf(int lv,nodeptr node)
+void cprintf(int lv, nodeptr node)
 {
-    if (err_count||node == NULL||!strcmp(node->type, "EMPTY"))
+    if (err_count || node == NULL || !strcmp(node->type, "EMPTY"))
     {
         return;
     }
-    for (int i = 0 ; i < lv; i++)
+    for (int i = 0; i < lv; i++)
     {
         printf("  ");
     }
-    switch (lv%5)
+    switch (lv % 5)
     {
     case 0:
         printf(BLUE);
@@ -97,45 +107,49 @@ void cprintf(int lv,nodeptr node)
     {
         printf(" : %lf", node->value.fltv);
     }
-    printf(" (%d)\n"CLEAN, node->line_num);
+    printf(" (%d)\n" CLEAN, node->line_num);
     for (int i = 0; i < node->children_count; i++)
     {
-        cprintf(lv + 1,node->children[i]);
+        cprintf(lv + 1, node->children[i]);
     }
 }
-void lex_err(int ln,char* desc)
+void lex_err(int ln, char *desc)
 {
     err_count++;
-    printf(RED"\033[31mError type A at Line %d: %s.\n"CLEAN,ln,desc);
+    printf(RED "\033[31mError type A at Line %d: %s.\n" CLEAN, ln, desc);
 }
-void lex_err_x(int ln, char* expr,char* desc)
+void lex_err_x(int ln, char *expr, char *desc)
 {
     err_count++;
-    printf(RED"Error type A at Line %d: %s \"%s\".\n"CLEAN,ln,desc,expr);
+    printf(RED "Error type A at Line %d: %s \"%s\".\n" CLEAN, ln, desc, expr);
 }
 void trans_err(int type, int ln)
 {
     err_count++;
-    printf(RED"Error type %d at Line %d: %s.\n"CLEAN,type,ln,trans_errors[type]);
+    printf(RED "Error type %d at Line %d: %s.\n" CLEAN, type, ln, trans_errors[type]);
 }
-void trans_err_x(int type, int ln, char* expr)
+void trans_err_x(int type, int ln, char *expr)
 {
     err_count++;
-    printf(RED"Error type %d at Line %d: %s \"%s\".\n"CLEAN,type,ln,trans_errors[type],expr);
+    printf(RED "Error type %d at Line %d: %s \"%s\".\n" CLEAN, type, ln, trans_errors[type], expr);
 }
-void yyerror(const char* s)
+void yyerror(const char *s)
 {
     err_count++;
-    printf(RED"Error type B at Line %d: Syntax Error.\n"CLEAN, max_line_num>yylineno?max_line_num:yylineno);
+    printf(RED "Error type B at Line %d: Syntax Error.\n" CLEAN, max_line_num > yylineno ? max_line_num : yylineno);
 }
 
-void lex_log(int ln,char* lex_unit){
-    if(LEXDEBUG){
-        printf("%s\n",lex_unit);
+void lex_log(int ln, char *lex_unit)
+{
+    if (LEXDEBUG)
+    {
+        printf("%s\n", lex_unit);
     }
 }
-void lex_log_x(int ln,char* lex_unit, char* expr){
-    if(LEXDEBUG){
-        printf("%s: %s\n",lex_unit,expr);
+void lex_log_x(int ln, char *lex_unit, char *expr)
+{
+    if (LEXDEBUG)
+    {
+        printf("%s: %s\n", lex_unit, expr);
     }
 }

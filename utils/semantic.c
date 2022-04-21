@@ -1,10 +1,10 @@
-#include "syntax.translate.h"
-#include "utils/stack.h"
-#include "utils/list.h"
-#include "utils/expressions.h"
-#include "utils/symbols.h"
-#include "utils/statements.h"
-#include "utils/corelib.h"
+#include "semantic.h"
+#include "stack.h"
+#include "list.h"
+#include "expressions.h"
+#include "symbols.h"
+#include "statements.h"
+#include "corelib.h"
 
 extern struct Node *empty_node;
 
@@ -198,7 +198,6 @@ int ExtDef(nodeptr node)
 
     if (is_implement)
     {
-        
         if (origin == NULL)
         {
             add_global_symbol(func);
@@ -751,7 +750,7 @@ expression Exp(nodeptr node)
         return parse_exp_single(node->children[0]);
     case 2:
         // 各种一元运算符
-        return parse_exp_triple(node);
+        return parse_exp_tuple(node);
     case 3:
         // 各种二元运算符 和 无参数调用、结构体访问、括号
         return parse_exp_triple(node);

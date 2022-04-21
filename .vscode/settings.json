@@ -1,0 +1,29 @@
+{
+    "files.associations": {
+        "type_traits": "c",
+        "bit": "c",
+        "cstddef": "c",
+        "string": "c",
+        "optional": "c",
+        "limits": "c",
+        "memory": "c",
+        "new": "c",
+        "functional": "c",
+        "random": "c",
+        "expressions.h": "c",
+        "syntax.translate.h": "c",
+        "corelib.h": "c",
+        "mylib.h": "c",
+        "trans_errors.h": "c",
+        "list.h": "c",
+        "stack.h": "c",
+        "symbols.h": "c",
+        "stdlib.h": "c",
+        "hashtable.h": "c",
+        "syntax.tab.h": "c",
+        "murmur.h": "c",
+        "hashfunc.h": "c",
+        "stdarg.h": "c"
+    },
+    "C_Cpp.errorSquiggles": "Enabled"
+}

@@ -1,6 +1,13 @@
 #include "corelib.h"
 #include <stdlib.h>
 
+#include <string.h>
+
+int streql(char *s1, char *s2)
+{
+    return !strcmp(s1, s2);
+}
+
 class new_class(
 	class_schema schema, class_def type_def)
 {
