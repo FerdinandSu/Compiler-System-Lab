@@ -61,8 +61,9 @@ int clseql(class t1, class t2)
 
 control_flags readonly_flag()
 {
-	control_flags f;
-	f.readonly = 1;
+	control_flags f ={
+		.readonly = 1
+	};
 	return f;
 }
 int size_of_class(class c)

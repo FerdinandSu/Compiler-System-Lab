@@ -25,7 +25,10 @@
         "hashfunc.h": "c",
         "stdarg.h": "c",
         "strings.h": "c",
-        "intercode.h": "c"
+        "intercode.h": "c",
+        "iosfwd": "c",
+        "istream": "c",
+        "ostream": "c"
     },
     "C_Cpp.errorSquiggles": "Enabled"
 }

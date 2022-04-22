@@ -115,8 +115,12 @@ list ir_from_expression_single(expression exp)
     switch (exp->op)
     {
     case OP_VAR:
-        exp->ref = new_user_var(cast(string, last));
-        break;
+    {
+        symbol s = last;
+        exp->ref = new_user_var(s->name);
+    }
+
+    break;
     default:
         exp->ref = exp->type->def.type == TYPE_INT ?
             new_code_operand(COT_CINT, *cast(int*, last)) :
@@ -136,16 +140,28 @@ list ir_from_expression_tuple(expression exp)
     // 内联常量
     if (sub_ex->op == OP_CONST)
     {
-        exp->ref = is_neg ?
-            new_code_operand(
-            sub_ex->ref->type,
-            -(sub_ex->ref->type == COT_CINT ?
-            sub_ex->ref->ref.int_const :
-            sub_ex->ref->ref.flt_const)) :
-            (IS_TRUE(sub_ex->ref->ref.int_const) ?
-             ir_op_zero() :
-             ir_op_one());
-        exp->flags.ir_inline = 1;
+        if (is_neg)
+        {
+            if (sub_ex->ref->type == COT_CINT)
+            {
+                exp->ref =
+                    new_code_operand(COT_CINT, -sub_ex->ref->ref.int_const);
+
+            }
+            else
+            {
+                exp->ref =
+                    new_code_operand(COT_CFLT, -sub_ex->ref->ref.flt_const);
+            }
+
+        }
+        else
+        {
+            exp->ref = (IS_TRUE(sub_ex->ref->ref.int_const) ?
+                        ir_op_zero() :
+                        ir_op_one());
+        }
+
         return sub_ex_code;
     }
 
@@ -319,10 +335,11 @@ list ir_from_expression_triple_lassoc(expression exp)
  * @param exp
  * @return list
  */
-list ir_from_expression_call_builtin(expression exp)
+list ir_from_expression_call_builtin(
+    expression exp, builtin_symbol_type type)
 {
 
-    switch (exp->flags.builtin)
+    switch (type)
     {
     case BUILT_IN_READ:
     {
@@ -337,7 +354,8 @@ list ir_from_expression_call_builtin(expression exp)
     case BUILT_IN_WRITE:
         exp->ref = ir_op_zero();
         exp->flags.ir_inline = 1;
-        expression subex = last_sub_ex(exp);
+        list args = list_last(exp->sub_expressions);
+        expression subex = list_first(args);
         list subex_code = ir_from_expression(subex);
         return append_list(
             subex_code,
@@ -351,10 +369,12 @@ list ir_from_expression_call_builtin(expression exp)
 
 list ir_from_expression_call(expression exp)
 {
-    if (exp->flags.builtin)
-        return ir_from_expression_call_builtin(exp);
+
     expression func_id_exp = first_sub_ex(exp);
-    string func_id = list_first(func_id_exp->sub_expressions);
+    symbol func = list_first(func_id_exp->sub_expressions);
+    if (func->flags.builtin)
+        return ir_from_expression_call_builtin(
+        exp, func->flags.builtin == 1 ? 1 : 2);
     list args = list_last(exp->sub_expressions);
     /**
      * @brief 反向枚举器
@@ -379,7 +399,7 @@ list ir_from_expression_call(expression exp)
     return append_list(
         r,
         new_code(IR_CALL, return_value,
-        new_code_operand(COT_FUNC, func_id))
+        new_code_operand(COT_FUNC, func->name))
     );
 }
 /**
@@ -619,7 +639,7 @@ list ir_from_statement(statement s)
         );
     }
     list else_code = ir_from_statement(list_last(s->content));
-    return concat_list(
+    list concated= concat_list(
         ex_code,
         concat_list(
         prepend_list(
@@ -634,5 +654,5 @@ list ir_from_statement(statement s)
         if_true_code,
         label_next))
     );
-
+    return concated;
 }

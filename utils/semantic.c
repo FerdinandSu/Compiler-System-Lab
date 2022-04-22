@@ -471,7 +471,7 @@ expression ExpID(nodeptr node, symbol_table_accessor get_x_symbol)
     }
     class type = id->type;
     return new_expression(
-        OP_VAR, type, id->flags.readonly, new_list_singleton(id->name));
+        OP_VAR, type, id->flags.readonly, new_list_singleton(id));
 }
 expression CONST(nodeptr node)
 {
@@ -526,9 +526,9 @@ operator_type parse_operator(string name)
     if (streql(name, "LE"))
         return OP_LE;
     if (streql(name, "EQ"))
-        return OP_SUB;
+        return OP_EQ;
     if (streql(name, "NEQ"))
-        return OP_SUB;
+        return OP_NEQ;
     trans_err_x(0, 505, name);
     return OP_ADD;
 }
