@@ -4,12 +4,14 @@
 #include <stdarg.h>
 #include "utils/semantic.h"
 #include "utils/irruntime.h"
+#include "utils/irgen.h"
+#include "utils/intercode.h"
 //#include "syntax.tab.c"
 
 #define YYDEBUG 0
 #define LEXDEBUG 0
 
-char *trans_errors[] = {
+char* trans_errors[] = {
     "Unknown Expression",
     "Undefined variable",
     "Undefined function",
@@ -30,22 +32,27 @@ char *trans_errors[] = {
     "Undefined structure",
     "Function not implemented",
     "Conflicted function declaration",
-    "Condition expression is not an integer"};
+    "Condition expression is not an integer" };
 
 extern int max_line_num;
 extern int yylineno;
 nodeptr root;
 int err_count = 0;
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     if (argc <= 1)
         return 1;
-    FILE *f = fopen(argv[1], "r");
+    FILE* f = fopen(argv[1], "r");
     if (!f)
     {
         perror(argv[1]);
         return 1;
+    }
+    FILE* fw = argc > 2 ? fopen(argv[2], "wt+") : NULL;
+    if (!fw)
+    {
+        printf(YELLOW"Output file not specified/failed to open, using stdout.\n"CLEAN);
     }
     yyrestart(f);
     yyparse();
@@ -61,7 +68,14 @@ int main(int argc, char **argv)
     global_symbol_check();
     if (err_count == 0)
     {
-        printf(GREEN "Translation Completed Successfully.\n" CLEAN);
+        printf(GREEN "Sematic analysis Completed Successfully.\n" CLEAN);
+    }
+    list codes = ir_from_symbol_table(global_symbols);
+    list_enumerator e = create_enumerator(codes);
+    for (; has_next_enumerator(e);move_next_enumerator(e))
+    {
+        code c = get_current_enumerator(e);
+        fprint_code(fw, c);
     }
     return 0;
 }
@@ -113,12 +127,12 @@ void cprintf(int lv, nodeptr node)
         cprintf(lv + 1, node->children[i]);
     }
 }
-void lex_err(int ln, char *desc)
+void lex_err(int ln, char* desc)
 {
     err_count++;
     printf(RED "\033[31mError type A at Line %d: %s.\n" CLEAN, ln, desc);
 }
-void lex_err_x(int ln, char *expr, char *desc)
+void lex_err_x(int ln, char* expr, char* desc)
 {
     err_count++;
     printf(RED "Error type A at Line %d: %s \"%s\".\n" CLEAN, ln, desc, expr);
@@ -128,28 +142,28 @@ void trans_err(int type, int ln)
     err_count++;
     printf(RED "Error type %d at Line %d: %s.\n" CLEAN, type, ln, trans_errors[type]);
 }
-void trans_err_x(int type, int ln, char *expr)
+void trans_err_x(int type, int ln, char* expr)
 {
     err_count++;
     printf(RED "Error type %d at Line %d: %s \"%s\".\n" CLEAN, type, ln, trans_errors[type], expr);
 }
-void yyerror(const char *s)
+void yyerror(const char* s)
 {
     err_count++;
     printf(RED "Error type B at Line %d: Syntax Error.\n" CLEAN, max_line_num > yylineno ? max_line_num : yylineno);
 }
 
-void lex_log(int ln, char *lex_unit)
+void lex_log(int ln, char* lex_unit)
 {
     if (LEXDEBUG)
     {
-        printf("%s\n", lex_unit);
+        printf("[%d] %s\n", ln, lex_unit);
     }
 }
-void lex_log_x(int ln, char *lex_unit, char *expr)
+void lex_log_x(int ln, char* lex_unit, char* expr)
 {
     if (LEXDEBUG)
     {
-        printf("%s: %s\n", lex_unit, expr);
+        printf("[%d] %s: %s\n", ln, lex_unit, expr);
     }
 }

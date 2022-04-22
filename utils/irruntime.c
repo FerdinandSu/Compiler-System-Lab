@@ -22,7 +22,7 @@ void builtin_symbol_init()
     class_def write_def = {
         .func_def = {
             .type = class_int(),
-            .params = new_list_singleton(new_symbol(class_int(),"i",0,0))}};
+            .params = new_list_singleton(new_symbol(class_int(),"i",0,0,-1))}};
     class write_type = new_class(CLASS_FUNCTION, write_def);
     symbol write=new(struct symbol_t);
     write->type=write_type;

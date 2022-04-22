@@ -1,4 +1,5 @@
 #include "symbols.h"
+#include "stdlib.h"
 #include "../lib/hashtable/hashtable.h"
 #include "../lib/hashtable/murmur.h"
 
@@ -9,11 +10,12 @@ symbol_table new_symbol_table()
 	return table;
 }
 
-symbol new_symbol(class type, string name, int readonly, int implemented)
+symbol new_symbol(class type, string name, int readonly, int implemented, int index)
 {
 	symbol r = malloc(sizeof(struct symbol_t));
 	r->flags.implemented = implemented;
 	r->flags.readonly = readonly;
+	r->index = index;
 	r->name = name;
 	r->type = type;
 	return r;
@@ -75,4 +77,55 @@ symbol_table new_symbol_table_from_list(list l)
 	}
 	destroy_enumerator(e);
 	return st;
+}
+
+list symbol_table_to_list(symbol_table t)
+{
+	int buf_siz = t->key_count;
+	list l = new_list();
+	if (buf_siz == 0)return l;
+	symbol* const buf = calloc(sizeof(symbol), buf_siz);
+	symbol* buf_ptr = buf;
+	symbol_table_enumerator e;
+	for (e = create_symbol_table_enumerator(t);
+		 has_next_symbol_table_enumerator(e);
+		 move_next_symbol_table_enumerator(e))
+	{
+		symbol current = get_current_symbol_table_enumerator(e);
+		*buf_ptr=current;
+		buf_ptr++;
+	}
+	destroy_symbol_table_enumerator(e);
+	if (buf_siz > 1)
+	{
+		symbol* hi = buf_ptr - 1;
+		symbol* lo = buf;
+		symbol* p;
+		symbol* max;
+		while (hi > lo)
+		{
+			max = lo;
+
+			/*下面这个for循环作用是从lo到hi的元素中，选出最大的一个，max指针指向这个最大项*/
+
+			for (p = lo + 1; p <= hi; p++)
+			{
+				if ((**p).index > (**max).index)
+				{
+					max = p;
+
+				}
+
+			}
+			symbol swp = *max;
+			*max = *hi;
+			*hi = swp;
+			hi--;
+		}
+
+	}
+	for (int i = 1;i < buf_siz;i++)
+		add_list(l, buf[i]);
+	free(buf);
+	return l;
 }

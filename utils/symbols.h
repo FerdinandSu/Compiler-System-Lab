@@ -19,12 +19,21 @@ typedef struct symbol_t
 	string name;
 	control_flags flags;
 	symbol_ref reference;
+	int index;
 } * symbol;
-symbol new_symbol(class type, string name, int readonly, int implemented);
+
+symbol new_symbol(class type, string name, int readonly, int implemented,int index);
 class new_class(
 	class_schema schema, class_def type_def);
 symbol_table new_symbol_table();
 symbol_table new_symbol_table_from_list(list l);
+/**
+ * @brief 转换符号表为按照index排序的符号序列
+ * 
+ * @param l 
+ * @return list 
+ */
+list symbol_table_to_list(symbol_table l);
 void destroy_symbol_table(symbol_table table);
 symbol get_symbol(symbol_table slist, string name);
 int has_symbol(symbol_table slist, string name);

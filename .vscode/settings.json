@@ -23,7 +23,9 @@
         "syntax.tab.h": "c",
         "murmur.h": "c",
         "hashfunc.h": "c",
-        "stdarg.h": "c"
+        "stdarg.h": "c",
+        "strings.h": "c",
+        "intercode.h": "c"
     },
     "C_Cpp.errorSquiggles": "Enabled"
 }

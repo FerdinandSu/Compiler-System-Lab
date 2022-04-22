@@ -6,12 +6,14 @@
 #include "statements.h"
 #include "corelib.h"
 
-extern struct Node *empty_node;
+extern struct Node* empty_node;
+static int __symbol_index;
 
 void translate_system_init()
 {
     global_symbols = new_symbol_table();
     scoped_symbols = new_stack();
+    __symbol_index = 0;
     push_stack(scoped_symbols, global_symbols);
 }
 /**
@@ -118,9 +120,9 @@ symbol FunDec(nodeptr node, class ret_type)
     class_def cdef = {
         .func_def = {
             .params = varlist,
-            .type = ret_type}};
+            .type = ret_type} };
     class fclass = new_class(CLASS_FUNCTION, cdef);
-    return new_symbol(fclass, node->children[0]->value.strv, 1, 0);
+    return new_symbol(fclass, node->children[0]->value.strv, 1, 0, __symbol_index++);
 }
 /**
  * @brief
@@ -165,7 +167,7 @@ void Program(nodeptr node)
 }
 void ExtDefList(nodeptr node)
 {
-    if (node == empty_node)
+    if (node == cast(nodeptr, empty_node))
         return;
     ExtDef(node->children[0]);
     ExtDefList(node->children[1]);
@@ -203,6 +205,11 @@ int ExtDef(nodeptr node)
             add_global_symbol(func);
             origin = get_global_symbol(func->name);
         }
+        else
+        {
+            __symbol_index--;
+        }
+
 
         return_type = s;
         symbol_table args = new_symbol_table_from_list(func->type->def.func_def.params);
@@ -213,7 +220,7 @@ int ExtDef(nodeptr node)
     }
     else
     {
-        func->reference.origin=node;
+        func->reference.origin = node;
         add_global_symbol(func);
     }
     return 1;
@@ -234,7 +241,7 @@ int ExtDec(nodeptr node, class s)
     if (has_global_symbol(sym->name))
     {
         trans_err_x(3, node->line_num, sym->name);
-        return NULL;
+        return 0;
     }
     add_global_symbol(sym);
     return 1;
@@ -306,11 +313,11 @@ statement Stmt(nodeptr node)
 symbol_table DefList(nodeptr node, symbol_table base_symbols)
 {
     symbol_table r = base_symbols == NULL ? new_symbol_table() : base_symbols;
-    if (node == empty_node)
+    if (node == cast(nodeptr, empty_node))
         return r;
     nodeptr node_it;
     for (node_it = node;
-         node_it != empty_node;
+         node_it != cast(nodeptr, empty_node);
          node_it = node_it->children[1])
     {
         symbol_table sublist = Def(node_it->children[0]);
@@ -385,6 +392,7 @@ symbol Dec(nodeptr node, class type)
         expression rightValue = Exp(node->children[2]);
         if (!clseql(type, rightValue->type))
             trans_err(5, node->line_num);
+        var->reference.var = rightValue;
     }
     return var;
 }
@@ -396,7 +404,7 @@ symbol VarDec(nodeptr node, class type)
     {
         return new_symbol(type,
                           node->children[0]->value.strv,
-                          0, 0);
+                          0, 0, __symbol_index++);
     }
     // -> VarDec LB INT RB
     symbol arr = VarDec(node->children[0], type);
@@ -404,7 +412,7 @@ symbol VarDec(nodeptr node, class type)
     class_def newtypedef = {
         .arr_def = {
             .size = node->children[2]->value.intv,
-            .type = subtype}};
+            .type = subtype} };
     arr->type = new_class(CLASS_ARRAY, newtypedef);
     return arr;
 }
@@ -415,15 +423,15 @@ class StructSpecifier(nodeptr node)
     if (node->children_count == 5)
     {
         symbol_table studef = DefList(node->children[3], NULL);
-        class_def def = {.stu_def = studef};
+        class_def def = { .stu_def = studef };
         class r = new_class(
             CLASS_STRUCT,
             def);
-        int is_symbol = node->children[1] != empty_node;
+        int is_symbol = node->children[1] != cast(nodeptr, empty_node);
         symbol stu = new_symbol(
             r,
             is_symbol ? strdup(node->children[1]->children[0]->value.strv) : "",
-            1, 1);
+            1, 1, __symbol_index++);
         if (is_symbol)
         {
             if (has_global_symbol(stu->name))
@@ -452,7 +460,7 @@ class StructSpecifier(nodeptr node)
     }
     return origin->type;
 }
-typedef symbol (*symbol_table_accessor)(string);
+typedef symbol(*symbol_table_accessor)(string);
 expression ExpID(nodeptr node, symbol_table_accessor get_x_symbol)
 {
     string idname = node->value.strv;
@@ -583,7 +591,7 @@ expression parse_exp_triple(nodeptr node)
             trans_err(9, n1->line_num);
             return NULL;
         }
-        return new_expression(OP_CALL, func_id->type->def.func_def.type, 1, new_list_singleton(func_id));
+        return new_expression(OP_CALL, func_id->type->def.func_def.type, 2, new_list_of(2,func_id, new_list()));
     }
     expression lv = Exp(n1);
     if (lv == NULL)
@@ -667,10 +675,10 @@ int func_param_eql(list parameters, list arguments)
     int r = 1;
     for (
         params = create_enumerator(parameters),
-       args = create_enumerator(arguments);
+        args = create_enumerator(arguments);
         has_next_enumerator(params);
         move_next_enumerator(params),
-       move_next_enumerator(args))
+        move_next_enumerator(args))
     {
         symbol param = get_current_enumerator(params);
         expression arg = get_current_enumerator(args);

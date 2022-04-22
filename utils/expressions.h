@@ -2,6 +2,7 @@
 
 #include "list.h"
 #include "corelib.h"
+#include "intercode.h"
 
 typedef struct element_t
 {
@@ -24,11 +25,6 @@ typedef enum operator_type_t
 	OP_LT,
 	OP_EQ,
 	OP_NEQ,
-	/**
-	 * @brief 括号
-	 * 
-	 */
-	OP_PT,
 	OP_NEG,
 	OP_NOT,
 	OP_CALL,
@@ -48,6 +44,12 @@ typedef struct expression_t
 	 *
 	 */
 	list sub_expressions;
+	/**
+	 * @brief 引用此表达式所需要的IR操作数
+	 * 
+	 */
+	code_oprand ref;
+
 } * expression;
 
 expression new_expression(

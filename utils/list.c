@@ -28,6 +28,24 @@ void add_list(list l, object e)
     l->last = new;
     l->count++;
 }
+
+list prepend_list(object e, list l)
+{
+    list_node new = new_list_node(e);
+    if (l->count == 0)
+    {
+        l->last = new;
+    }
+    else
+    {
+        new->next = l->first;
+        l->first->last = new;
+    }
+    l->first = new;
+    l->count++;
+    return l;
+}
+
 list new_list_singleton(object e)
 {
     list l = new_list();
@@ -58,6 +76,18 @@ int has_next_enumerator(list_enumerator e)
 {
     return e->current != NULL;
 }
+
+list_enumerator create_reverse_enumerator(list l)
+{
+    list_enumerator e = new(struct list_enumerator_t);
+    e->current = l->last;
+    return e;
+}
+
+void move_next_reverse_enumerator(list_enumerator e)
+{
+    e->current = e->current->last;
+}
 object get_current_enumerator(list_enumerator e)
 {
     return e->current->element;
@@ -73,9 +103,34 @@ list new_list_of(int count, ...)
     va_start(vl, count);
     for (int i = 0; i < count; i++)
     {
-        add_list(l,va_arg(vl, object));
+        add_list(l, va_arg(vl, object));
     }
     va_end(vl);
 
+    return l;
+}
+list concat_list(list l1, list l2)
+{
+    if (l1->count == 0)
+    {
+        destroy_list(l1);
+        return l2;
+    }
+    if (l2->count == 0)
+    {
+        destroy_list(l2);
+        return l1;
+    }
+    l1->last->next = l2->first;
+    l2->first->last = l1->last;
+    l1->last = l2->last;
+    l1->count += l2->count;
+    free(l2);
+    return l1;
+}
+
+list append_list(list l, object e)
+{
+    add_list(l, e);
     return l;
 }

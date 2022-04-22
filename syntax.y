@@ -697,7 +697,7 @@ struct Node* create_node(char* type,union NodeValue value, int children_count,st
     r->children_count=children_count;
     r->line_num=ln;
 	if (YYDEBUG){
-		printf("NodeCreated[%x]: {Type=%s,children_count=%d,ln=%d}\n",(unsigned int)r,r->type,r->children_count,r->line_num);
+		printf("NodeCreated[%x]: {Type=%s,children_count=%d,ln=%d}\n",r,r->type,r->children_count,r->line_num);
 	}
 
 
