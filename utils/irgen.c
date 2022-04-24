@@ -441,11 +441,10 @@ list ir_from_expression_struct(expression exp)
 {
     expression stu = first_sub_ex(exp);
     expression member_id_exp = last_sub_ex(exp);
-    string member_id = list_first(member_id_exp->sub_expressions);
+    symbol member = list_first(member_id_exp->sub_expressions);
     list left = ir_from_expression_lv(stu);
     symbol_table stu_def = stu->type->def.stu_def;
     // 计算偏移
-    symbol member = get_symbol(stu_def, member_id);
     int sym_index = member->index;
     int offset = 0;
     symbol_table_enumerator e;

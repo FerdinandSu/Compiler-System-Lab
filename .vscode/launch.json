@@ -9,7 +9,7 @@
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/parser",
-      "args": ["examples/lab3/2.c", "examples/out/2.ir"],
+      "args": ["examples/lab3/1.c"],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "environment": [],
