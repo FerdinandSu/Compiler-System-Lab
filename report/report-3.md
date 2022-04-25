@@ -37,14 +37,7 @@ void builtin_symbol_init();
 核心库中的控制位也加入了相关控制信息(`builtin`)；另一个新加入的`ir_inline`则用于修饰表达式内联信息，这会在后文中提到。
 
 ```c
-typedef struct control_flags_t
-{
-	int implemented : 1;
-	int readonly : 1;
-	int builtin : 2;
-	int ir_inline : 1;
-	int padding : 26;
-} control_flags;
+typedef struct control_flags_t{...,int builtin : 2;int ir_inline : 1;int padding : 26;} control_flags;
 ```
 
 #### 表达式的改动
@@ -52,13 +45,7 @@ typedef struct control_flags_t
 表达式(expression)的改动在于新增加的`ref`字段，它将会引用本表达式的值对应的操作数。此外，`control_flags`中的`ir_inline`也主要作用于表达式。
 
 ```c
-typedef struct expression_t
-{
-	operator_type op;
-	control_flags flags;
-	list sub_expressions;
-	code_oprand ref;
-} * expression;
+typedef struct expression_t{...,code_oprand ref;} * expression;
 ```
 
 #### 中间代码
@@ -69,35 +56,20 @@ typedef struct expression_t
 typedef union code_oprand_reference_t{int int_const;char* name;int op;float flt_const;} code_oprand_reference;
 typedef struct code_oprand_t{code_oprand_type type;code_oprand_reference ref;} code_oprand_obj;
 typedef code_oprand_obj* code_oprand;
-code_oprand ir_op_one();//常量0操作数
-code_oprand ir_op_zero();//常量1操作数
-code_oprand ir_op_neq();//不等号操作数
-code_oprand ir_op_eq();//等号操作数
 typedef struct code_t{code_type type;code_oprand oprands[4];} *code;
-void fprint_code(FILE* f, code c);//打印代码
-code_oprand new_ir_var();//新建IR变量操作数
-code_oprand new_user_var(string name);//新建用户变量操作数
-code_oprand new_code_operand(code_oprand_type type, ...);//新建操作数
-code_oprand new_ir_label();//新建标签操作数
-code_oprand new_ir_ptr();//新建指针操作数
-code new_code(code_type type, ...);//新建代码
 ```
 
 ### 中间代码生成模块
 
-中间代码生成模块(`irgen.h`)为主要的符号、语句和表达式分别建立了若干处理函数，调用关系与符号表中它们的引用关系一致；因此，中间代码生成起始于$ir_from_symbol_table(global_symbols)$的调用。
+中间代码生成模块(`irgen.h`)为主要的符号、语句和表达式分别建立了若干处理函数，调用关系与符号表中它们的引用关系一致；因此，中间代码生成起始于$ir\_from\_symbol\_table(global\_symbols)$的调用。
 
 ```c
 list ir_from_var_declaration(symbol var);
 list ir_from_function(symbol def);
 list ir_from_symbol_list(list symbols);
 list ir_from_symbol_table(symbol_table st);
-static inline expression first_sub_ex(expression exp);
-static inline expression second_sub_ex(expression exp);
-static inline expression last_sub_ex(expression exp);
 list ir_from_expression_single(expression exp);//常变量表达式
 list ir_from_expression_tuple(expression exp);//单目运算
-code_type code_type_cast_arithmetic_op(operator_type op);//
 list ir_from_expression_triple_lassoc(expression exp);
 list ir_from_expression_call_builtin(expression exp, builtin_symbol_type type);
 list ir_from_expression_call(expression exp);
