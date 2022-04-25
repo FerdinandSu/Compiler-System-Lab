@@ -10,7 +10,7 @@
  * @param var
  * @return list
  */
-list ir_from_var_daclaration(symbol var)
+list ir_from_var_declaration(symbol var)
 {
     list l = var->type->schema == CLASS_STANDARD ? new_list() :
         new_list_singleton(
@@ -79,7 +79,7 @@ list ir_from_symbol_list(list symbols)
             }
             /* !!! 这里故意没有 break; */
         default:
-            l = concat_list(l, ir_from_var_daclaration(s));
+            l = concat_list(l, ir_from_var_declaration(s));
             continue;
         }
     }
